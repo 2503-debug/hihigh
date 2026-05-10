@@ -2,53 +2,64 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Hi&High 控制台 (全功能同步版)</title>
+    <title>Hi&High 控制台 (功能獨立版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 450px; }
-        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="number"], input[type="text"] { padding: 10px; border: 2px solid #00a8ff; border-radius: 8px; }
-        input[type="number"] { font-size: 1.5rem; width: 100px; text-align: center; }
-        input[type="text"] { width: 100%; box-sizing: border-box; }
-        button { padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; color: white; }
-        .btn-call { background: #00a8ff; flex-grow: 1; }
-        .btn-next { background: #27ae60; }
-        .config-box { background: #f8fafc; padding: 15px; border-radius: 8px; margin-bottom: 15px; font-size: 0.9rem; }
-        .voice-row { display: grid; grid-template-columns: 20px 50px 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
-        select { padding: 5px; border-radius: 5px; width: 100%; }
-        .img-preview { width: 100%; height: 100px; border: 2px dashed #cbd5e1; border-radius: 8px; margin-top: 10px; display: flex; align-items: center; justify-content: center; overflow: hidden; background-size: cover; background-position: center; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 480px; }
+        .section { background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid #e2e8f0; }
+        .section-title { font-weight: bold; color: #1e293b; margin-bottom: 10px; display: block; border-left: 4px solid #00a8ff; padding-left: 8px; }
+        .input-row { display: flex; gap: 8px; margin-top: 5px; }
+        input[type="number"], input[type="text"] { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
+        input[type="text"] { flex-grow: 1; }
+        input[type="number"] { font-size: 1.2rem; width: 80px; text-align: center; border: 2px solid #00a8ff; }
+        button { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; color: white; }
+        .btn-blue { background: #00a8ff; }
+        .btn-green { background: #27ae60; }
+        .btn-purple { background: #ff0000; } /* 與看板跑馬燈同色 */
+        .btn-orange { background: #e67e22; }
+        .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 0.85rem; }
+        .img-preview { width: 100%; height: 80px; border: 2px dashed #cbd5e1; border-radius: 6px; margin-top: 8px; display: flex; align-items: center; justify-content: center; background-size: cover; background-position: center; font-size: 0.8rem; color: #94a3b8; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2 style="color:#004e92; margin-top:0;">Hi&High 全功能控制</h2>
+        <h2 style="color:#004e92; margin-top:0; text-align:center;">Hi&High 系統主控台</h2>
         
-        <div class="input-group">
-            <input type="number" id="inputNum" value="0" onfocus="this.select()" onkeydown="if(event.key==='Enter') send()">
-            <button class="btn-call" onclick="send()">確認叫號</button>
-            <button class="btn-next" onclick="next()">+1</button>
+        <div class="section">
+            <span class="section-title">1. 號碼呼叫</span>
+            <div class="input-row">
+                <input type="number" id="inputNum" value="0">
+                <button class="btn-blue" style="flex-grow:1" onclick="updateFirebase('num')">確認叫號</button>
+                <button class="btn-green" onclick="nextNum()">+1</button>
+            </div>
         </div>
 
-        <div class="config-box">
-            <label><b>1. 即時公告訊息</b></label>
-            <input type="text" id="msgInput" placeholder="輸入公告文字 (留空則隱藏)..." style="margin-top:5px;">
+        <div class="section">
+            <span class="section-title">2. 滾動公告 (紅底白字)</span>
+            <div class="input-row">
+                <input type="text" id="msgInput" placeholder="輸入公告文字 (留空則隱藏)...">
+                <button class="btn-purple" onclick="updateFirebase('msg')">同步訊息</button>
+            </div>
         </div>
 
-        <div class="config-box">
-            <label><b>2. 同步更換背景圖</b></label>
-            <input type="file" id="bgInput" accept="image/*" style="width:100%; margin-top:5px;">
-            <div id="preview" class="img-preview">預覽圖</div>
+        <div class="section">
+            <span class="section-title">3. 背景更換</span>
+            <input type="file" id="bgInput" accept="image/*">
+            <div id="preview" class="img-preview">尚未選取圖片</div>
+            <button class="btn-orange" style="width:100%; margin-top:8px;" onclick="updateFirebase('bg')">同步更換背景</button>
         </div>
 
-        <div class="config-box">
-            <label><b>3. 語音設定</b></label>
-            <div style="margin: 10px 0;">音量：<input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="vertical-align:middle;"></div>
-            <div class="voice-row"><input type="checkbox" id="chkZh" checked><label>中文</label><select id="selZh"></select></div>
-            <div class="voice-row"><input type="checkbox" id="chkEn" checked><label>英文</label><select id="selEn"></select></div>
-            <div class="voice-row"><input type="checkbox" id="chkJp" checked><label>日文</label><select id="selJp"></select></div>
-            重複次數：<input type="number" id="repeat" value="1" min="1" style="width:50px; font-size: 1rem;">
+        <div class="section" style="margin-bottom:0; font-size: 0.8rem;">
+            <span class="section-title">4. 語音參數</span>
+            音量：<input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="width:60%; vertical-align:middle;">
+            重複：<input type="number" id="repeat" value="1" min="1" style="width:35px;">
+            <div class="voice-grid" style="margin-top:10px;">
+                <div><input type="checkbox" id="chkZh" checked> 中 <select id="selZh"></select></div>
+                <div><input type="checkbox" id="chkEn" checked> 英 <select id="selEn"></select></div>
+                <div><input type="checkbox" id="chkJp" checked> 日 <select id="selJp"></select></div>
+            </div>
         </div>
     </div>
 
@@ -65,7 +76,6 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
-        const synth = window.speechSynthesis;
         let globalBg = null;
 
         document.getElementById('bgInput').onchange = e => {
@@ -80,27 +90,25 @@
         };
 
         function loadVoices() {
-            const v = synth.getVoices();
+            const v = window.speechSynthesis.getVoices();
             const fill = (id, lang, key) => {
                 const el = document.getElementById(id);
                 const filtered = v.filter(s => s.lang.toLowerCase().includes(lang));
-                el.innerHTML = filtered.map(s => `<option value="${s.name}" ${s.name.includes(key)?'selected':''}>${s.name}</option>`).join('');
+                el.innerHTML = filtered.map(s => `<option value="${s.name}" ${s.name.includes(key)?'selected':''}>${s.name.substring(0,8)}</option>`).join('');
             };
             fill('selZh', 'zh', 'Yating'); fill('selEn', 'en', 'Zira'); fill('selJp', 'ja', 'Google');
         }
-        if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
+        window.speechSynthesis.onvoiceschanged = loadVoices;
         window.onload = loadVoices;
 
-        function next() {
-            const n = parseInt(document.getElementById('inputNum').value) + 1;
-            document.getElementById('inputNum').value = n;
-            trigger(n);
+        function nextNum() {
+            document.getElementById('inputNum').value = parseInt(document.getElementById('inputNum').value) + 1;
+            updateFirebase('num');
         }
-        function send() { trigger(parseInt(document.getElementById('inputNum').value)); }
 
-        function trigger(num) {
+        function updateFirebase(type) {
             const data = {
-                number: num,
+                number: parseInt(document.getElementById('inputNum').value),
                 message: document.getElementById('msgInput').value,
                 volume: parseFloat(document.getElementById('volRange').value),
                 repeat: parseInt(document.getElementById('repeat').value),
@@ -110,7 +118,8 @@
                     en: { enabled: document.getElementById('chkEn').checked, voice: document.getElementById('selEn').value },
                     jp: { enabled: document.getElementById('chkJp').checked, voice: document.getElementById('selJp').value }
                 },
-                timestamp: Date.now()
+                timestamp: Date.now(),
+                updateType: type
             };
             db.ref('call_data').set(data);
         }
