@@ -2,22 +2,18 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Hi&High 飛翔提案所 - 雲端大螢幕</title>
+    <title>Hi&High 飛翔提案所 - 雲端同步看板</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 0.8s ease; }
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.8) 0%, rgba(30, 58, 138, 0.5) 100%); z-index: 1; }
+        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease-in-out; }
+        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
         .system-title { font-size: 3.5rem; font-weight: bold; margin-bottom: 30px; letter-spacing: 6px; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0, 168, 255, 0.6); z-index: 10; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 60px 140px; border-radius: 50px; border: 3px solid rgba(0, 168, 255, 0.6); box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5); position: relative; z-index: 10; }
-        .display-panel::before { content: "READY FOR DEPARTURE"; position: absolute; top: 25px; left: 50%; transform: translateX(-50%); font-size: 1.2rem; color: var(--brand-light); letter-spacing: 10px; font-weight: 300; }
+        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 60px 140px; border-radius: 50px; border: 3px solid rgba(0, 168, 255, 0.6); box-shadow: 0 20px 80px rgba(0, 0, 0, 0.5); position: relative; z-index: 10; }
         .label { font-size: 3.8rem; margin: 40px 0 10px 0; color: #f8fafc; }
-        .current-number { font-size: 24rem; font-weight: 900; color: var(--accent-gold); line-height: 1; font-family: 'Arial Black', sans-serif; text-shadow: 0 0 40px rgba(241, 196, 15, 0.4); }
-        .upload-zone { position: absolute; bottom: 20px; right: 20px; z-index: 100; opacity: 0.05; transition: opacity 0.3s; }
-        .upload-zone:hover { opacity: 1; }
-        .upload-btn { background: rgba(255,255,255,0.2); color: white; border: 1px solid white; padding: 8px 12px; border-radius: 5px; cursor: pointer; font-size: 0.8rem; }
+        .current-number { font-size: 24rem; font-weight: 900; color: var(--accent-gold); line-height: 1; text-shadow: 0 0 40px rgba(241, 196, 15, 0.4); }
     </style>
 </head>
 <body id="bgBody">
@@ -27,12 +23,8 @@
         <div class="label">請旅人準備搭乘</div>
         <div class="current-number" id="num">000</div>
     </div>
-    <div class="upload-zone">
-        <label class="upload-btn">📷 更換並儲存背景 <input type="file" id="bgInput" accept="image/*" style="display:none"></label>
-    </div>
 
     <script>
-        // 整合後的 Firebase Config
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -48,66 +40,43 @@
         const synth = window.speechSynthesis;
         let lastTimestamp = 0;
 
-        // 背景圖片永久儲存邏輯 (IndexedDB)
-        const dbName = "HiHighDB", storeName = "Settings";
-        function initBg() {
-            const req = indexedDB.open(dbName, 1);
-            req.onupgradeneeded = e => e.target.result.createObjectStore(storeName);
-            req.onsuccess = e => {
-                const tx = e.target.result.transaction(storeName, "readonly");
-                const getReq = tx.objectStore(storeName).get("backgroundImage");
-                getReq.onsuccess = () => { if (getReq.result) document.getElementById('bgBody').style.backgroundImage = `url(${getReq.result})`; };
-            };
-        }
-        document.getElementById('bgInput').onchange = e => {
-            const file = e.target.files[0];
-            const reader = new FileReader();
-            reader.onload = ev => {
-                const data = ev.target.result;
-                document.getElementById('bgBody').style.backgroundImage = `url(${data})`;
-                const req = indexedDB.open(dbName, 1);
-                req.onsuccess = ev2 => ev2.target.result.transaction(storeName, "readwrite").objectStore(storeName).put(data, "backgroundImage");
-            };
-            reader.readAsDataURL(file);
-        };
-
-        // 監聽 Firebase 雲端跳號
         db.ref('call_data').on('value', snap => {
             const data = snap.val();
             if (!data || data.timestamp === lastTimestamp) return;
             lastTimestamp = data.timestamp;
             
-            // 更新畫面號碼
+            // 1. 同步背景圖 (如果資料內含圖片)
+            if (data.bg) {
+                document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
+            }
+
+            // 2. 更新數字
             document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
             
-            // 語音邏輯
+            // 3. 語音播報
             synth.cancel();
-            setTimeout(() => speak(data), 150);
+            setTimeout(() => {
+                const voices = synth.getVoices();
+                let queue = [];
+                if (data.langs.zh.enabled) queue.push({ text: `請第 ${data.number} 號旅人準備搭乘`, voice: data.langs.zh.voice, lang: 'zh-TW' });
+                if (data.langs.en.enabled) queue.push({ text: `Traveler ${data.number}, please prepare`, voice: data.langs.en.voice, lang: 'en-US' });
+                if (data.langs.jp.enabled) queue.push({ text: `${data.number} 番の旅人様、ご準備ください`, voice: data.langs.jp.voice, lang: 'ja-JP' });
+                
+                let fullQ = [];
+                for(let i=0; i<data.repeat; i++) fullQ = fullQ.concat(queue);
+                
+                const play = (idx) => {
+                    if (idx >= fullQ.length) return;
+                    const u = new SpeechSynthesisUtterance(fullQ[idx].text);
+                    const v = voices.find(sv => sv.name === fullQ[idx].voice);
+                    if (v) u.voice = v; else u.lang = fullQ[idx].lang;
+                    u.volume = data.volume; u.onend = () => play(idx + 1);
+                    synth.speak(u);
+                };
+                play(0);
+            }, 150);
         });
 
-        function speak(data) {
-            const voices = synth.getVoices();
-            let queue = [];
-            if (data.langs.zh.enabled) queue.push({ text: `請第 ${data.number} 號旅人準備搭乘`, voice: data.langs.zh.voice, lang: 'zh-TW' });
-            if (data.langs.en.enabled) queue.push({ text: `Traveler number ${data.number}, please prepare for boarding`, voice: data.langs.en.voice, lang: 'en-US' });
-            if (data.langs.jp.enabled) queue.push({ text: `${data.number} 番の旅人様、ご搭乗の準備をお願いします`, voice: data.langs.jp.voice, lang: 'ja-JP' });
-            
-            let fullQueue = [];
-            for(let i=0; i<data.repeat; i++) fullQueue = fullQueue.concat(queue);
-            play(fullQueue, 0, voices, data.volume);
-        }
-
-        function play(q, idx, v, vol) {
-            if (idx >= q.length) return;
-            const u = new SpeechSynthesisUtterance(q[idx].text);
-            const found = v.find(sv => sv.name === q[idx].voice);
-            if (found) u.voice = found; else u.lang = q[idx].lang;
-            u.volume = vol; u.rate = 0.95; u.onend = () => play(q, idx + 1, v, vol);
-            synth.speak(u);
-        }
-
-        window.onload = initBg;
-        // 點擊解鎖音訊權限
         document.onclick = () => synth.speak(new SpeechSynthesisUtterance(""));
     </script>
 </body>
