@@ -9,21 +9,25 @@
         :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); }
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease-in-out; }
+        
+        /* 遮罩 */
         .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
         
-        /* 跑馬燈：紅底白字 */
-        #infoBar { position: fixed; top: 0; width: 100%; background: #ff0000; color: #ffffff; height: 100px; line-height: 100px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
-        #marquee { position: absolute; white-space: nowrap; font-size: 4rem; font-weight: 900; animation: scrollText 15s linear infinite; padding-left: 100%; }
+        /* 跑馬燈樣式：紅色背景、白色大字體 */
+        #infoBar { position: fixed; top: 0; width: 100%; background: #ff0000; color: #ffffff; height: 100px; line-height: 100px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-bottom: 3px solid #fff; }
+        #marquee { position: absolute; white-space: nowrap; font-size: 4rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
         @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
+        /* 主畫面樣式 */
         .system-title { font-size: 3.5rem; font-weight: bold; margin-bottom: 30px; letter-spacing: 6px; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0, 168, 255, 0.6); z-index: 10; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(15px); padding: 60px 140px; border-radius: 50px; border: 3px solid rgba(0, 168, 255, 0.6); position: relative; z-index: 10; }
+        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 60px 140px; border-radius: 50px; border: 3px solid rgba(0, 168, 255, 0.6); position: relative; z-index: 10; }
         .label { font-size: 3.8rem; margin: 40px 0 10px 0; color: #f8fafc; }
         .current-number { font-size: 24rem; font-weight: 900; color: var(--accent-gold); line-height: 1; text-shadow: 0 0 40px rgba(241, 196, 15, 0.4); }
     </style>
 </head>
 <body id="bgBody">
     <div id="infoBar"><div id="marquee"><span id="msgText"></span></div></div>
+    
     <div class="bg-overlay"></div>
     <div class="system-title">Hi&High 飛翔提案所</div>
     <div class="display-panel">
@@ -32,6 +36,7 @@
     </div>
 
     <script>
+        // Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -47,55 +52,99 @@
         const synth = window.speechSynthesis;
         let lastTimestamp = 0;
 
+        // 確保語音清單載入
+        window.speechSynthesis.getVoices();
+        if (speechSynthesis.onvoiceschanged !== undefined) {
+            speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
+        }
+
         db.ref('call_data').on('value', snap => {
             const data = snap.val();
             if (!data || data.timestamp === lastTimestamp) return;
             lastTimestamp = data.timestamp;
             
-            if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
+            // 1. 背景圖同步
+            if (data.bg) {
+                document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
+            }
 
+            // 2. 跑馬燈同步
             const bar = document.getElementById('infoBar');
+            const msgSpan = document.getElementById('msgText');
             if (data.message && data.message.trim() !== "") {
-                document.getElementById('msgText').innerText = data.message + "　　　　　";
+                msgSpan.innerText = data.message + "　　　　　　　　　　";
                 bar.style.display = "block";
             } else {
                 bar.style.display = "none";
             }
 
+            // 3. 號碼同步
             document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
             
-            // 語音廣播優化邏輯
+            // 4. 語音叫號 (僅當 updateType 為 'num' 時)
             if (data.updateType === 'num') {
-                synth.cancel();
+                synth.cancel(); // 停止目前所有發聲
+                
                 setTimeout(() => {
                     const allVoices = synth.getVoices();
                     let queue = [];
-                    const pushQ = (enabled, text, voiceName, langCode) => {
-                        if (enabled) {
-                            let v = allVoices.find(sv => sv.name === voiceName) || allVoices.find(sv => sv.lang.includes(langCode));
-                            queue.push({ text, voice: v, lang: langCode });
-                        }
-                    };
-                    pushQ(data.langs.zh.enabled, `請第 ${data.number} 號旅人準備搭乘`, data.langs.zh.voice, 'zh');
-                    pushQ(data.langs.en.enabled, `Traveler number ${data.number}, please prepare`, data.langs.en.voice, 'en');
-                    pushQ(data.langs.jp.enabled, `${data.number} 番の旅人様、ご準備ください`, data.langs.jp.voice, 'ja');
 
-                    let fullQ = [];
-                    for(let i=0; i<data.repeat; i++) fullQ = fullQ.concat(queue);
-                    const play = (idx) => {
-                        if (idx >= fullQ.length) return;
-                        const u = new SpeechSynthesisUtterance(fullQ[idx].text);
-                        if (fullQ[idx].voice) u.voice = fullQ[idx].voice;
-                        else u.lang = fullQ[idx].lang === 'zh' ? 'zh-TW' : (fullQ[idx].lang === 'en' ? 'en-US' : 'ja-JP');
-                        u.volume = data.volume; u.rate = 0.9;
-                        u.onend = () => play(idx + 1);
-                        synth.speak(u);
+                    // 強大的語音選取器
+                    const getVoice = (preferName, langCode) => {
+                        return allVoices.find(v => v.name === preferName) || 
+                               allVoices.find(v => v.lang.toLowerCase().includes(langCode.toLowerCase()));
                     };
-                    play(0);
-                }, 200);
+
+                    // 準備三國語言語句
+                    if (data.langs.zh.enabled) {
+                        const u = new SpeechSynthesisUtterance(`請第 ${data.number} 號旅人準備搭乘`);
+                        u.voice = getVoice(data.langs.zh.voice, 'zh');
+                        u.lang = 'zh-TW';
+                        queue.push(u);
+                    }
+                    if (data.langs.en.enabled) {
+                        const u = new SpeechSynthesisUtterance(`Traveler number ${data.number}, please prepare`);
+                        u.voice = getVoice(data.langs.en.voice, 'en');
+                        u.lang = 'en-US';
+                        queue.push(u);
+                    }
+                    if (data.langs.jp.enabled) {
+                        const u = new SpeechSynthesisUtterance(`${data.number} 番の旅人様、ご準備ください`);
+                        u.voice = getVoice(data.langs.jp.voice, 'ja');
+                        u.lang = 'ja-JP';
+                        queue.push(u);
+                    }
+
+                    // 執行隊列播放
+                    const playQueue = (idx) => {
+                        if (idx >= queue.length) return;
+                        
+                        // 設定通用屬性
+                        queue[idx].volume = data.volume || 1;
+                        queue[idx].rate = 0.9;
+                        
+                        // 遞迴播放
+                        queue[idx].onend = () => {
+                            // 處理重複次數邏輯（這裡簡化為播放完單次語言後檢查是否要重複）
+                            playQueue(idx + 1);
+                        };
+                        synth.speak(queue[idx]);
+                    };
+
+                    // 重複次數處理
+                    for (let r = 0; r < (data.repeat || 1); r++) {
+                        playQueue(0);
+                    }
+                }, 100);
             }
         });
-        document.onclick = () => synth.speak(new SpeechSynthesisUtterance(""));
+
+        // 重要：瀏覽器解鎖音訊
+        document.onclick = () => {
+            const unlock = new SpeechSynthesisUtterance("");
+            synth.speak(unlock);
+            console.log("Audio Unlocked");
+        };
     </script>
 </body>
 </html>
