@@ -2,14 +2,16 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Hi&High 控制台 (全域同步版)</title>
+    <title>Hi&High 控制台 (全功能同步版)</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 20px; }
         .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 450px; }
         .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
-        input[type="number"] { font-size: 1.5rem; width: 100px; padding: 10px; border: 2px solid #00a8ff; border-radius: 8px; text-align: center; }
+        input[type="number"], input[type="text"] { padding: 10px; border: 2px solid #00a8ff; border-radius: 8px; }
+        input[type="number"] { font-size: 1.5rem; width: 100px; text-align: center; }
+        input[type="text"] { width: 100%; box-sizing: border-box; }
         button { padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; color: white; }
         .btn-call { background: #00a8ff; flex-grow: 1; }
         .btn-next { background: #27ae60; }
@@ -21,14 +23,8 @@
 </head>
 <body>
     <div class="card">
-        <h2 style="color:#004e92; margin-top:0;">Hi&High 全域控制</h2>
+        <h2 style="color:#004e92; margin-top:0;">Hi&High 全功能控制</h2>
         
-        <div class="config-box">
-            <label><b>1. 廣播音量與重複</b></label>
-            <input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="width:100%">
-            重複次數：<input type="number" id="repeat" value="1" min="1" style="width:50px">
-        </div>
-
         <div class="input-group">
             <input type="number" id="inputNum" value="0" onfocus="this.select()" onkeydown="if(event.key==='Enter') send()">
             <button class="btn-call" onclick="send()">確認叫號</button>
@@ -36,16 +32,23 @@
         </div>
 
         <div class="config-box">
+            <label><b>1. 即時公告訊息</b></label>
+            <input type="text" id="msgInput" placeholder="輸入公告文字 (留空則隱藏)..." style="margin-top:5px;">
+        </div>
+
+        <div class="config-box">
             <label><b>2. 同步更換背景圖</b></label>
             <input type="file" id="bgInput" accept="image/*" style="width:100%; margin-top:5px;">
             <div id="preview" class="img-preview">預覽圖</div>
-            <p style="font-size:0.7rem; color:red;">*建議圖片小於 500KB 以確保傳輸流暢</p>
         </div>
 
-        <div class="voice-section">
+        <div class="config-box">
+            <label><b>3. 語音設定</b></label>
+            <div style="margin: 10px 0;">音量：<input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="vertical-align:middle;"></div>
             <div class="voice-row"><input type="checkbox" id="chkZh" checked><label>中文</label><select id="selZh"></select></div>
             <div class="voice-row"><input type="checkbox" id="chkEn" checked><label>英文</label><select id="selEn"></select></div>
             <div class="voice-row"><input type="checkbox" id="chkJp" checked><label>日文</label><select id="selJp"></select></div>
+            重複次數：<input type="number" id="repeat" value="1" min="1" style="width:50px; font-size: 1rem;">
         </div>
     </div>
 
@@ -65,7 +68,6 @@
         const synth = window.speechSynthesis;
         let globalBg = null;
 
-        // 讀取圖片並預覽
         document.getElementById('bgInput').onchange = e => {
             const file = e.target.files[0];
             const reader = new FileReader();
@@ -99,9 +101,10 @@
         function trigger(num) {
             const data = {
                 number: num,
+                message: document.getElementById('msgInput').value,
                 volume: parseFloat(document.getElementById('volRange').value),
                 repeat: parseInt(document.getElementById('repeat').value),
-                bg: globalBg, // 同步傳送背景圖
+                bg: globalBg,
                 langs: {
                     zh: { enabled: document.getElementById('chkZh').checked, voice: document.getElementById('selZh').value },
                     en: { enabled: document.getElementById('chkEn').checked, voice: document.getElementById('selEn').value },
