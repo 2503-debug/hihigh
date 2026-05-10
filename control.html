@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>Hi&High 控制台 (雲端同步版)</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 450px; }
+        .input-group { display: flex; gap: 10px; margin-bottom: 20px; }
+        input[type="number"] { font-size: 1.5rem; width: 100px; padding: 10px; border: 2px solid #00a8ff; border-radius: 8px; text-align: center; }
+        button { padding: 10px 20px; font-size: 1rem; border-radius: 8px; cursor: pointer; border: none; font-weight: bold; color: white; }
+        .btn-call { background: #00a8ff; flex-grow: 1; }
+        .btn-next { background: #27ae60; }
+        .voice-section { border-top: 1px solid #e2e8f0; margin-top: 15px; padding-top: 15px; }
+        .voice-row { display: grid; grid-template-columns: 20px 50px 1fr; gap: 10px; align-items: center; margin-bottom: 12px; }
+        select { padding: 5px; border-radius: 5px; font-size: 0.8rem; width: 100%; }
+        .volume-box { background: #f8fafc; padding: 10px; border-radius: 8px; margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="color:#004e92; margin-top:0;">Hi&High 叫號控制</h2>
+        
+        <div class="volume-box">
+            <label style="font-size:0.9rem; font-weight:bold;">廣播音量</label>
+            <input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="width:100%">
+        </div>
+
+        <div class="input-group">
+            <input type="number" id="inputNum" value="0" onfocus="this.select()" onkeydown="if(event.key==='Enter') send()">
+            <button class="btn-call" onclick="send()">確認叫號</button>
+            <button class="btn-next" onclick="next()">+1</button>
+        </div>
+
+        <div class="voice-section">
+            <div style="margin-bottom:10px;">重複次數：<input type="number" id="repeat" value="1" min="1" style="width:50px"></div>
+            <div class="voice-row"><input type="checkbox" id="chkZh" checked><label>中文</label><select id="selZh"></select></div>
+            <div class="voice-row"><input type="checkbox" id="chkEn" checked><label>英文</label><select id="selEn"></select></div>
+            <div class="voice-row"><input type="checkbox" id="chkJp" checked><label>日文</label><select id="selJp"></select></div>
+        </div>
+    </div>
+
+    <script>
+        // 整合後的 Firebase Config
+        const firebaseConfig = {
+            apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
+            authDomain: "hihigh-system.firebaseapp.com",
+            databaseURL: "https://hihigh-system-default-rtdb.firebaseio.com",
+            projectId: "hihigh-system",
+            storageBucket: "hihigh-system.firebasestorage.app",
+            messagingSenderId: "969837475229",
+            appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
+            measurementId: "G-V62MTFXC8N"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+        const synth = window.speechSynthesis;
+
+        function loadVoices() {
+            const v = synth.getVoices();
+            const fill = (id, lang, key) => {
+                const el = document.getElementById(id);
+                const filtered = v.filter(s => s.lang.toLowerCase().includes(lang));
+                el.innerHTML = filtered.map(s => `<option value="${s.name}" ${s.name.includes(key)?'selected':''}>${s.name}</option>`).join('');
+            };
+            fill('selZh', 'zh', 'Yating'); fill('selEn', 'en', 'Zira'); fill('selJp', 'ja', 'Google');
+        }
+        if (synth.onvoiceschanged !== undefined) synth.onvoiceschanged = loadVoices;
+        window.onload = loadVoices;
+
+        function send() { trigger(parseInt(document.getElementById('inputNum').value)); }
+        function next() { 
+            const n = parseInt(document.getElementById('inputNum').value) + 1;
+            document.getElementById('inputNum').value = n;
+            trigger(n);
+        }
+
+        function trigger(num) {
+            const data = {
+                number: num,
+                volume: parseFloat(document.getElementById('volRange').value),
+                repeat: parseInt(document.getElementById('repeat').value),
+                langs: {
+                    zh: { enabled: document.getElementById('chkZh').checked, voice: document.getElementById('selZh').value },
+                    en: { enabled: document.getElementById('chkEn').checked, voice: document.getElementById('selEn').value },
+                    jp: { enabled: document.getElementById('chkJp').checked, voice: document.getElementById('selJp').value }
+                },
+                timestamp: Date.now()
+            };
+            // 寫入雲端
+            db.ref('call_data').set(data);
+            document.getElementById('inputNum').select();
+        }
+    </script>
+</body>
+</html>
