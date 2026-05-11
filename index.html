@@ -1,217 +1,71 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hi&High 飛翔提案所 - 雲端同步看板</title>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
-    <style>
-        :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; --danger: #e74c3c; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease-in-out; }
+<style>
+    /* ... 前面的樣式保持不變 ... */
+
+    /* 新增：輸入成功的閃爍效果 */
+    .save-success {
+        animation: successFlash 0.5s ease-out;
+    }
+    @keyframes successFlash {
+        0% { border-color: var(--brand-light); box-shadow: 0 0 0px var(--success); }
+        50% { border-color: #27ae60; box-shadow: 0 0 20px #27ae60; }
+        100% { border-color: var(--brand-light); box-shadow: 0 0 0px var(--success); }
+    }
+
+    /* 提示文字樣式 */
+    #saveStatus {
+        font-size: 0.85rem;
+        height: 1.2rem;
+        color: #27ae60;
+        font-weight: bold;
+        margin-top: 5px;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+</style>
+
+<div class="traveler-box" id="travelerUI">
+    <span>請輸入您抽的號碼</span>
+    <input type="number" id="myNumInput" placeholder="---" oninput="handleNumInput()">
+    <div id="saveStatus">✓ 設定成功，到號時將自動提醒</div>
+</div>
+
+<script>
+    // ... Firebase 與其他變數保持不變 ...
+
+    let saveTimer; // 用來控制提示文字消失
+
+    function handleNumInput() {
+        const input = document.getElementById('myNumInput');
+        const status = document.getElementById('saveStatus');
         
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
-        
-        #audioUnlockBtn {
-            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
-            z-index: 9999; background: #27ae60; color: white; border: none;
-            padding: 15px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: pointer;
-            display: flex; align-items: center; justify-content: center; gap: 10px; 
-            animation: pulse 2s infinite; width: auto; min-width: 200px;
-        }
-        @keyframes pulse {
-            0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
-            70% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 15px rgba(39, 174, 96, 0); }
-            100% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0); }
-        }
+        // 1. 儲存號碼
+        localStorage.setItem('hihigh_num', input.value);
 
-        /* 跑馬燈 */
-        #infoBar { position: fixed; top: 3%; width: 90%; left: 5%; background: #ff0000; color: #ffffff; height: 60px; line-height: 60px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border-radius: 15px; }
-        #marquee { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
-        @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        // 2. 觸發視覺反饋 (只有當有輸入數字時)
+        if (input.value.length > 0) {
+            // 重置動畫
+            input.classList.remove('save-success');
+            void input.offsetWidth; // 強制重繪
+            input.classList.add('save-success');
 
-        /* 主面板 */
-        .system-title { font-size: 3.5vw; font-weight: bold; margin-bottom: 15px; letter-spacing: 0.5vw; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 10; text-align: center; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 85%; max-width: 1000px; padding: 4vh 2vw; border-radius: 40px; border: 4px solid rgba(0, 168, 255, 0.5); position: relative; z-index: 10; transition: all 0.3s; }
-        .label { font-size: 2.5vw; margin-bottom: 10px; color: #f8fafc; font-weight: bold; }
-        .current-number { font-size: 16vw; font-weight: 900; color: var(--accent-gold); line-height: 0.9; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
-
-        /* 旅人輸入區：預設隱藏 (大螢幕模式) */
-        .traveler-box { display: none; }
-
-        /* 手機/小螢幕模式 (寬度小於 1024px) 顯示輸入區 */
-        @media (max-width: 1024px) {
-            .system-title { font-size: 8vw; }
-            .label { font-size: 6vw; }
-            .current-number { font-size: 30vw; }
-            #marquee { font-size: 1.5rem; }
-
-            .traveler-box {
-                display: flex; flex-direction: column; 
-                margin-top: 30px; z-index: 20; 
-                background: rgba(0, 168, 255, 0.15);
-                padding: 20px; border-radius: 25px; 
-                border: 2px solid var(--brand-light);
-                color: white; align-items: center; gap: 15px;
-                box-shadow: 0 0 20px rgba(0, 168, 255, 0.3);
-                animation: glow 3s infinite alternate;
-            }
-            .traveler-box span { font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; }
-            .traveler-box input {
-                width: 120px; height: 60px;
-                background: rgba(0,0,0,0.6); border: 3px solid var(--accent-gold);
-                color: var(--accent-gold); font-size: 2.5rem; font-weight: 900;
-                text-align: center; border-radius: 15px; outline: none;
-            }
-        }
-
-        @keyframes glow {
-            from { box-shadow: 0 0 10px rgba(0, 168, 255, 0.2); }
-            to { box-shadow: 0 0 25px rgba(0, 168, 255, 0.5); }
-        }
-        
-        .matched-alert { 
-            border-color: var(--danger) !important; 
-            box-shadow: 0 0 80px rgba(231, 76, 60, 0.8) !important;
-            transform: scale(1.05);
-            animation: flashBorder 0.5s infinite alternate;
-        }
-        @keyframes flashBorder { from { border-color: var(--danger); } to { border-color: white; } }
-    </style>
-</head>
-<body id="bgBody">
-    <button id="audioUnlockBtn" onclick="unlockAudio()">
-        <span>🔊</span> 啟動語音系統
-    </button>
-
-    <div id="infoBar"><div id="marquee"><span id="msgText"></span></div></div>
-    <div class="bg-overlay"></div>
-    <div class="system-title">Hi&High 飛翔提案所</div>
-    
-    <div class="display-panel" id="mainPanel">
-        <div class="label">請旅人準備搭乘</div>
-        <div class="current-number" id="num">000</div>
-    </div>
-
-    <div class="traveler-box" id="travelerUI">
-        <span>請輸入您抽的號碼</span>
-        <input type="number" id="myNumInput" placeholder="---" oninput="saveMyNum()">
-    </div>
-
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
-            authDomain: "hihigh-system.firebaseapp.com",
-            databaseURL: "https://hihigh-system-default-rtdb.firebaseio.com",
-            projectId: "hihigh-system",
-            storageBucket: "hihigh-system.firebasestorage.app",
-            messagingSenderId: "969837475229",
-            appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
-            measurementId: "G-V62MTFXC8N"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const synth = window.speechSynthesis;
-        let lastTimestamp = 0;
-        let isSpeaking = false;
-
-        function saveMyNum() {
-            localStorage.setItem('hihigh_num', document.getElementById('myNumInput').value);
-        }
-
-        function unlockAudio() {
-            try {
-                const u = new SpeechSynthesisUtterance("系統已就緒");
-                u.lang = "zh-TW";
-                synth.speak(u);
-                document.getElementById('audioUnlockBtn').style.display = 'none';
-            } catch (e) { document.getElementById('audioUnlockBtn').style.display = 'none'; }
-        }
-
-        window.onload = () => {
-            const saved = localStorage.getItem('hihigh_num');
-            if(saved) document.getElementById('myNumInput').value = saved;
-        };
-
-        db.ref('call_data').on('value', snap => {
-            const data = snap.val();
-            if (!data || data.timestamp <= lastTimestamp) return;
-            lastTimestamp = data.timestamp;
+            // 顯示提醒文字
+            status.style.opacity = "1";
             
-            if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
-            const bar = document.getElementById('infoBar');
-            if (data.message && data.message.trim() !== "") {
-                document.getElementById('msgText').innerText = data.message + "　　　　　";
-                bar.style.display = "block";
-            } else { bar.style.display = "none"; }
+            // 3 秒後自動隱藏提醒文字
+            clearTimeout(saveTimer);
+            saveTimer = setTimeout(() => {
+                status.style.opacity = "0";
+            }, 3000);
+        } else {
+            status.style.opacity = "0";
+        }
+    }
 
-            document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
-            
-            if (data.updateType === 'num') {
-                synth.cancel();
-                isSpeaking = false;
+    // 確保 window.onload 也有載入正確的 function 名稱
+    window.onload = () => {
+        const saved = localStorage.getItem('hihigh_num');
+        if(saved) document.getElementById('myNumInput').value = saved;
+    };
 
-                // 判斷是否為大螢幕 (輸入框是否顯示)
-                const travelerUI = document.getElementById('travelerUI');
-                const isBigScreen = window.getComputedStyle(travelerUI).display === 'none';
-                
-                const myNum = document.getElementById('myNumInput').value;
-                const isMatched = (myNum && parseInt(myNum) === data.number);
-
-                // --- 手機端智慧沈默邏輯 ---
-                // 如果不是大螢幕，且號碼沒配對成功，就不播放任何聲音
-                if (!isBigScreen && !isMatched) {
-                    return; 
-                }
-
-                setTimeout(() => {
-                    if (isSpeaking) return;
-                    isSpeaking = true;
-                    const allVoices = synth.getVoices();
-                    let queue = [];
-                    const getV = (pref, lang) => allVoices.find(v => v.name === pref) || allVoices.find(v => v.lang.includes(lang));
-
-                    // 1. 如果配對成功，加入專屬提醒
-                    if (isMatched) {
-                        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-                        const alertMsg = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
-                        alertMsg.lang = "zh-TW"; alertMsg.pitch = 1.2;
-                        queue.push(alertMsg);
-
-                        const panel = document.getElementById('mainPanel');
-                        panel.classList.add('matched-alert');
-                        setTimeout(() => panel.classList.remove('matched-alert'), 15000);
-                    }
-
-                    // 2. 只有大螢幕或是號碼配對成功的手機，才播放多國語音廣播
-                    if (isBigScreen || isMatched) {
-                        const langItems = [];
-                        if (data.langs.zh.enabled) langItems.push({ text: `請第 ${data.number} 號旅人準備搭乘`, pref: data.langs.zh.voice, lang: 'zh-TW' });
-                        if (data.langs.en.enabled) langItems.push({ text: `Traveler number ${data.number}, please prepare`, pref: data.langs.en.voice, lang: 'en-US' });
-                        if (data.langs.jp.enabled) langItems.push({ text: `${data.number} 番の旅人様、ご準備ください`, pref: data.langs.jp.voice, lang: 'ja-JP' });
-
-                        for (let r = 0; r < (data.repeat || 1); r++) {
-                            langItems.forEach(item => {
-                                const u = new SpeechSynthesisUtterance(item.text);
-                                u.voice = getV(item.pref, item.lang.substring(0, 2));
-                                u.lang = item.lang; u.volume = data.volume || 1; u.rate = 0.9;
-                                queue.push(u);
-                            });
-                        }
-                    }
-
-                    const playNext = (idx) => {
-                        if (idx >= queue.length) { isSpeaking = false; return; }
-                        queue[idx].onend = () => playNext(idx + 1);
-                        queue[idx].onerror = () => { isSpeaking = false; };
-                        synth.speak(queue[idx]);
-                    };
-                    if (queue.length > 0) playNext(0); else isSpeaking = false;
-                }, 150);
-            }
-        });
-    </script>
-</body>
-</html>
+    // ... 剩下的 Firebase 監聽與語音邏輯保持不變 ...
+</script>
