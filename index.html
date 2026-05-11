@@ -7,37 +7,21 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; }
+        :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; --danger: #e74c3c; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); }
         body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease-in-out; }
         
         .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
         
-        /* 修正後的語音啟動按鈕：縮小範圍，確保不會遮擋全螢幕 */
+        /* 啟動按鈕 */
         #audioUnlockBtn {
-            position: fixed; 
-            bottom: 30px; 
-            left: 50%; 
-            transform: translateX(-50%);
-            z-index: 9999; /* 確保在最上層 */
-            background: #27ae60; 
-            color: white; 
-            border: none;
-            padding: 15px 25px; 
-            font-size: 1.2rem; 
-            font-weight: bold; 
-            border-radius: 50px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5); 
-            cursor: pointer;
-            display: flex; 
-            align-items: center; 
-            justify-content: center;
-            gap: 10px; 
-            animation: pulse 2s infinite;
-            width: auto;      /* 確保不會撐滿寬度 */
-            min-width: 200px; /* 給予最小寬度方便點擊 */
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; background: #27ae60; color: white; border: none;
+            padding: 15px 25px; font-size: 1.2rem; font-weight: bold; border-radius: 50px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5); cursor: pointer;
+            display: flex; align-items: center; justify-content: center; gap: 10px; 
+            animation: pulse 2s infinite; width: auto; min-width: 200px;
         }
-
         @keyframes pulse {
             0% { transform: translateX(-50%) scale(1); box-shadow: 0 0 0 0 rgba(39, 174, 96, 0.7); }
             70% { transform: translateX(-50%) scale(1.05); box-shadow: 0 0 0 15px rgba(39, 174, 96, 0); }
@@ -45,23 +29,44 @@
         }
 
         /* 跑馬燈 */
-        #infoBar { position: fixed; top: 3%; width: 90%; left: 5%; background: #ff0000; color: #ffffff; height: 70px; line-height: 70px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border-radius: 15px; }
-        #marquee { position: absolute; white-space: nowrap; font-size: 2.5rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
+        #infoBar { position: fixed; top: 3%; width: 90%; left: 5%; background: #ff0000; color: #ffffff; height: 60px; line-height: 60px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.5); border-radius: 15px; }
+        #marquee { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
         @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
         /* 主面板 */
-        .system-title { font-size: 4vw; font-weight: bold; margin-bottom: 20px; letter-spacing: 0.5vw; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 10; text-align: center; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 85%; max-width: 1100px; padding: 5vh 2vw; border-radius: 40px; border: 4px solid rgba(0, 168, 255, 0.5); position: relative; z-index: 10; }
-        .label { font-size: 3vw; margin-bottom: 10px; color: #f8fafc; font-weight: bold; }
-        .current-number { font-size: 18vw; font-weight: 900; color: var(--accent-gold); line-height: 0.9; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
+        .system-title { font-size: 3.5vw; font-weight: bold; margin-bottom: 15px; letter-spacing: 0.5vw; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 10; text-align: center; }
+        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 85%; max-width: 1000px; padding: 4vh 2vw; border-radius: 40px; border: 4px solid rgba(0, 168, 255, 0.5); position: relative; z-index: 10; transition: all 0.3s; }
+        .label { font-size: 2.5vw; margin-bottom: 10px; color: #f8fafc; font-weight: bold; }
+        .current-number { font-size: 16vw; font-weight: 900; color: var(--accent-gold); line-height: 0.9; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
 
-        /* 手機版字體微調 */
+        /* 旅人號碼輸入區 */
+        .traveler-box {
+            margin-top: 25px; z-index: 20; background: rgba(255, 255, 255, 0.1);
+            padding: 12px 20px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+        .traveler-box input {
+            width: 70px; background: rgba(0,0,0,0.4); border: 2px solid var(--brand-light);
+            color: var(--accent-gold); font-size: 1.2rem; text-align: center; border-radius: 10px; outline: none;
+        }
+        
+        /* 配對成功特效 */
+        .matched-alert { 
+            border-color: var(--danger) !important; 
+            box-shadow: 0 0 80px rgba(231, 76, 60, 0.8) !important;
+            transform: scale(1.05);
+            animation: flashBorder 0.5s infinite alternate;
+        }
+        @keyframes flashBorder { 
+            from { border-color: var(--danger); } to { border-color: white; } 
+        }
+
         @media (max-width: 600px) {
             .system-title { font-size: 8vw; }
             .label { font-size: 6vw; }
-            .current-number { font-size: 35vw; }
-            #marquee { font-size: 1.8rem; }
-            #infoBar { height: 50px; line-height: 50px; }
+            .current-number { font-size: 30vw; }
+            .traveler-box { font-size: 0.9rem; padding: 10px 15px; }
+            #marquee { font-size: 1.5rem; }
         }
     </style>
 </head>
@@ -73,9 +78,15 @@
     <div id="infoBar"><div id="marquee"><span id="msgText"></span></div></div>
     <div class="bg-overlay"></div>
     <div class="system-title">Hi&High 飛翔提案所</div>
-    <div class="display-panel">
+    
+    <div class="display-panel" id="mainPanel">
         <div class="label">請旅人準備搭乘</div>
         <div class="current-number" id="num">000</div>
+    </div>
+
+    <div class="traveler-box" id="travelerUI">
+        <span>您的號碼：</span>
+        <input type="number" id="myNumInput" placeholder="---" oninput="saveMyNum()">
     </div>
 
     <script>
@@ -95,27 +106,23 @@
         let lastTimestamp = 0;
         let isSpeaking = false;
 
-        // 核心修正：強制隱藏按鈕的解鎖函式
+        function saveMyNum() {
+            localStorage.setItem('hihigh_num', document.getElementById('myNumInput').value);
+        }
+
         function unlockAudio() {
             try {
-                // 1. 執行語音解鎖
-                const unlock = new SpeechSynthesisUtterance("系統就緒");
-                unlock.lang = "zh-TW";
-                unlock.volume = 0.5;
-                synth.speak(unlock);
-                
-                // 2. 立即隱藏按鈕
-                const btn = document.getElementById('audioUnlockBtn');
-                if (btn) {
-                    btn.style.display = 'none';
-                    console.log("按鈕已隱藏");
-                }
-            } catch (e) {
-                console.error("語音解鎖出錯:", e);
-                // 就算語音噴錯，按鈕也要消失
+                const u = new SpeechSynthesisUtterance("系統已就緒");
+                u.lang = "zh-TW";
+                synth.speak(u);
                 document.getElementById('audioUnlockBtn').style.display = 'none';
-            }
+            } catch (e) { document.getElementById('audioUnlockBtn').style.display = 'none'; }
         }
+
+        window.onload = () => {
+            const saved = localStorage.getItem('hihigh_num');
+            if(saved) document.getElementById('myNumInput').value = saved;
+        };
 
         db.ref('call_data').on('value', snap => {
             const data = snap.val();
@@ -123,27 +130,38 @@
             lastTimestamp = data.timestamp;
             
             if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
-
             const bar = document.getElementById('infoBar');
             if (data.message && data.message.trim() !== "") {
                 document.getElementById('msgText').innerText = data.message + "　　　　　";
                 bar.style.display = "block";
-            } else {
-                bar.style.display = "none";
-            }
+            } else { bar.style.display = "none"; }
 
             document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
             
             if (data.updateType === 'num') {
                 synth.cancel();
                 isSpeaking = false;
+
+                // --- 旅人專屬配對邏輯 ---
+                const myNum = document.getElementById('myNumInput').value;
+                if (myNum && parseInt(myNum) === data.number) {
+                    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+                    const alertMsg = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
+                    alertMsg.lang = "zh-TW"; alertMsg.pitch = 1.2;
+                    synth.speak(alertMsg);
+                    
+                    const panel = document.getElementById('mainPanel');
+                    panel.classList.add('matched-alert');
+                    setTimeout(() => panel.classList.remove('matched-alert'), 15000);
+                }
+
+                // --- 標準多國語音叫號 ---
                 setTimeout(() => {
                     if (isSpeaking) return;
                     isSpeaking = true;
                     const allVoices = synth.getVoices();
                     let queue = [];
                     const getV = (pref, lang) => allVoices.find(v => v.name === pref) || allVoices.find(v => v.lang.includes(lang));
-
                     const langItems = [];
                     if (data.langs.zh.enabled) langItems.push({ text: `請第 ${data.number} 號旅人準備搭乘`, pref: data.langs.zh.voice, lang: 'zh-TW' });
                     if (data.langs.en.enabled) langItems.push({ text: `Traveler number ${data.number}, please prepare`, pref: data.langs.en.voice, lang: 'en-US' });
@@ -153,9 +171,7 @@
                         langItems.forEach(item => {
                             const u = new SpeechSynthesisUtterance(item.text);
                             u.voice = getV(item.pref, item.lang.substring(0, 2));
-                            u.lang = item.lang;
-                            u.volume = data.volume || 1;
-                            u.rate = 0.9;
+                            u.lang = item.lang; u.volume = data.volume || 1; u.rate = 0.9;
                             queue.push(u);
                         });
                     }
@@ -166,8 +182,7 @@
                         queue[idx].onerror = () => { isSpeaking = false; };
                         synth.speak(queue[idx]);
                     };
-                    if (queue.length > 0) playNext(0);
-                    else isSpeaking = false;
+                    if (queue.length > 0) playNext(0); else isSpeaking = false;
                 }, 150);
             }
         });
