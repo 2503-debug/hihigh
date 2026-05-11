@@ -2,69 +2,126 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <title>Hi&High 控制台 (最終整合版)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Hi&High 控制台</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f1f5f9; display: flex; justify-content: center; padding: 20px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 480px; }
-        .section { background: #f8fafc; padding: 15px; border-radius: 10px; margin-bottom: 15px; border: 1px solid #e2e8f0; }
-        .section-title { font-weight: bold; color: #1e293b; margin-bottom: 10px; display: block; border-left: 4px solid #00a8ff; padding-left: 8px; }
-        .input-row { display: flex; gap: 8px; margin-top: 5px; }
-        input[type="number"], input[type="text"] { padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; }
-        input[type="text"] { flex-grow: 1; }
-        input[type="number"] { font-size: 1.2rem; width: 80px; text-align: center; border: 2px solid #00a8ff; }
-        button { padding: 10px 15px; border-radius: 6px; cursor: pointer; border: none; font-weight: bold; color: white; }
-        .btn-blue { background: #00a8ff; }
-        .btn-green { background: #27ae60; }
-        .btn-red { background: #ff0000; }
-        .btn-orange { background: #e67e22; }
-        .voice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; font-size: 0.8rem; }
-        select { width: 100%; padding: 3px; }
-        .img-preview { width: 100%; height: 60px; border: 2px dashed #cbd5e1; border-radius: 6px; margin-top: 5px; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem; }
+        :root { --primary: #00a8ff; --success: #27ae60; --danger: #ff4757; --warning: #ffa502; --dark: #2f3542; }
+        
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+            background: #ced6e0; margin: 0; padding: 20px; 
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; box-sizing: border-box;
+        }
+
+        /* 鎖定電腦端寬度，手機端自適應 */
+        .card { 
+            background: white; width: 100%; max-width: 450px; 
+            padding: 25px; border-radius: 20px; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+            display: block !important; /* 強制顯示 */
+            box-sizing: border-box;
+        }
+
+        h2 { color: var(--dark); text-align: center; margin-bottom: 20px; font-size: 1.5rem; }
+
+        .section { 
+            background: #fdfdfd; padding: 15px; border-radius: 12px; 
+            margin-bottom: 15px; border: 1px solid #eaeaea; 
+        }
+
+        .section-title { 
+            font-weight: bold; color: var(--dark); margin-bottom: 12px; 
+            display: block; border-left: 5px solid var(--primary); padding-left: 10px;
+        }
+
+        .input-group { display: flex; flex-direction: column; gap: 10px; }
+
+        input[type="number"], input[type="text"], select { 
+            padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; width: 100%; box-sizing: border-box;
+            outline: none;
+        }
+
+        input[type="number"] { font-size: 1.8rem; font-weight: 900; text-align: center; color: var(--primary); background: #f0f9ff; }
+
+        button { 
+            padding: 12px; border-radius: 8px; cursor: pointer; border: none; 
+            font-weight: bold; color: white; font-size: 1rem; transition: all 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 5px;
+        }
+        button:hover { filter: brightness(1.1); }
+        button:active { transform: translateY(1px); }
+
+        .btn-full { width: 100%; }
+        .btn-blue { background: var(--primary); }
+        .btn-green { background: var(--success); }
+        .btn-red { background: var(--danger); }
+        .btn-orange { background: var(--warning); }
+        .btn-refresh { background: #747d8c; font-size: 0.75rem; padding: 4px 8px; cursor: pointer; }
+
+        .voice-grid { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .voice-item { 
+            display: flex; align-items: center; background: #f1f2f6; padding: 8px 12px; border-radius: 8px;
+        }
+        .voice-item input { width: 18px; height: 18px; margin-right: 10px; }
+        .voice-item select { font-size: 0.85rem; padding: 5px; background: white; }
+
+        .img-preview { 
+            width: 100%; height: 90px; border: 2px dashed #ccc; border-radius: 8px; 
+            margin-top: 10px; background-size: cover; background-position: center; 
+            display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 0.8rem;
+        }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2 style="color:#004e92; margin-top:0; text-align:center;">Hi&High 系統主控台</h2>
+        <h2>Hi&High 主控台</h2>
         
         <div class="section">
-            <span class="section-title">1. 號碼叫號</span>
-            <div class="input-row">
+            <span class="section-title">1. 號碼控制</span>
+            <div class="input-group">
                 <input type="number" id="inputNum" value="0">
-                <button class="btn-blue" style="flex-grow:1" onclick="sync('num')">確認叫號</button>
-                <button class="btn-green" onclick="nextNum()">+1</button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-blue btn-full" onclick="sync('num')">確認叫號</button>
+                    <button class="btn-green" style="width:80px;" onclick="nextNum()">+1</button>
+                </div>
             </div>
         </div>
 
         <div class="section">
-            <span class="section-title">2. 跑馬燈公告</span>
-            <div class="input-row">
-                <input type="text" id="msgInput" placeholder="輸入公告文字...">
-                <button class="btn-red" onclick="sync('msg')">同步訊息</button>
+            <span class="section-title">2. 跑馬燈訊息</span>
+            <div class="input-group">
+                <input type="text" id="msgInput" placeholder="輸入公告內容...">
+                <button class="btn-red btn-full" onclick="sync('msg')">同步公告</button>
             </div>
         </div>
 
         <div class="section">
-            <span class="section-title">3. 看板背景</span>
-            <input type="file" id="bgInput" accept="image/*" style="font-size:0.8rem">
+            <span class="section-title">3. 換背景圖</span>
+            <input type="file" id="bgInput" accept="image/*">
             <div id="preview" class="img-preview">預覽圖</div>
-            <button class="btn-orange" style="width:100%; margin-top:8px;" onclick="sync('bg')">同步更換背景</button>
+            <button class="btn-orange btn-full" style="margin-top:10px;" onclick="sync('bg')">更新背景</button>
         </div>
 
         <div class="section">
-            <span class="section-title">4. 語音細節</span>
-            <div style="margin-bottom:8px;">音量：<input type="range" id="volRange" min="0" max="1" step="0.1" value="1"> 
-                重複：<input type="number" id="repeat" value="1" min="1" style="width:35px"></div>
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <span class="section-title">4. 語音細節</span>
+                <div class="btn-refresh" onclick="loadVoices()">🔄 刷新語音</div>
+            </div>
+            <input type="range" id="volRange" min="0" max="1" step="0.1" value="1" style="width:100%">
+            <div style="font-size:0.9rem; margin: 10px 0;">重複：<input type="number" id="repeat" value="1" min="1" style="width:50px; font-size:1rem;"> 次</div>
             <div class="voice-grid">
-                <div><input type="checkbox" id="chkZh" checked>中 <select id="selZh"></select></div>
-                <div><input type="checkbox" id="chkEn" checked>英 <select id="selEn"></select></div>
-                <div><input type="checkbox" id="chkJp" checked>日 <select id="selJp"></select></div>
+                <div class="voice-item"><input type="checkbox" id="chkZh" checked> <b>中</b> <select id="selZh"></select></div>
+                <div class="voice-item"><input type="checkbox" id="chkEn" checked> <b>英</b> <select id="selEn"></select></div>
+                <div class="voice-item"><input type="checkbox" id="chkJp" checked> <b>日</b> <select id="selJp"></select></div>
             </div>
         </div>
     </div>
 
     <script>
+        // Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -79,39 +136,46 @@
         const db = firebase.database();
         let globalBg = null;
 
+        // 圖片預覽
         document.getElementById('bgInput').onchange = e => {
             const reader = new FileReader();
             reader.onload = ev => {
                 globalBg = ev.target.result;
-                document.getElementById('preview').style.backgroundImage = `url(${globalBg})`;
-                document.getElementById('preview').innerText = "";
+                const p = document.getElementById('preview');
+                p.style.backgroundImage = `url(${globalBg})`;
+                p.innerText = "";
             };
             reader.readAsDataURL(e.target.files[0]);
         };
 
+        // 載入語音
         function loadVoices() {
-            const v = window.speechSynthesis.getVoices();
-            const fill = (id, lang, prefer) => {
+            const synth = window.speechSynthesis;
+            const voices = synth.getVoices();
+            if (voices.length === 0) { setTimeout(loadVoices, 200); return; }
+
+            const fill = (id, lang) => {
                 const el = document.getElementById(id);
-                const filtered = v.filter(s => s.lang.toLowerCase().includes(lang));
-                el.innerHTML = filtered.length ? filtered.map(s => `<option value="${s.name}" ${s.name.includes(prefer)?'selected':''}>${s.name.substring(0,10)}</option>`).join('') : '<option value="">預設</option>';
+                const filtered = voices.filter(v => v.lang.toLowerCase().includes(lang));
+                el.innerHTML = filtered.map(v => `<option value="${v.name}">${v.name.substring(0,25)}</option>`).join('') || '<option value="">系統預設</option>';
             };
-            fill('selZh', 'zh', 'Yating'); fill('selEn', 'en', 'Zira'); fill('selJp', 'ja', 'Google');
+            fill('selZh', 'zh'); fill('selEn', 'en'); fill('selJp', 'ja');
         }
-        window.speechSynthesis.onvoiceschanged = loadVoices;
+        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
         window.onload = loadVoices;
 
         function nextNum() {
-            document.getElementById('inputNum').value = parseInt(document.getElementById('inputNum').value) + 1;
+            const el = document.getElementById('inputNum');
+            el.value = parseInt(el.value) + 1;
             sync('num');
         }
 
         function sync(type) {
             db.ref('call_data').set({
-                number: parseInt(document.getElementById('inputNum').value),
+                number: parseInt(document.getElementById('inputNum').value) || 0,
                 message: document.getElementById('msgInput').value,
                 volume: parseFloat(document.getElementById('volRange').value),
-                repeat: parseInt(document.getElementById('repeat').value),
+                repeat: parseInt(document.getElementById('repeat').value) || 1,
                 bg: globalBg,
                 langs: {
                     zh: { enabled: document.getElementById('chkZh').checked, voice: document.getElementById('selZh').value },
