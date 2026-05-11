@@ -13,7 +13,6 @@
         
         .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
         
-        /* 啟動按鈕 */
         #audioUnlockBtn {
             position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
             z-index: 9999; background: #27ae60; color: white; border: none;
@@ -39,35 +38,47 @@
         .label { font-size: 2.5vw; margin-bottom: 10px; color: #f8fafc; font-weight: bold; }
         .current-number { font-size: 16vw; font-weight: 900; color: var(--accent-gold); line-height: 0.9; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
 
-        /* 旅人號碼輸入區 */
-        .traveler-box {
-            margin-top: 25px; z-index: 20; background: rgba(255, 255, 255, 0.1);
-            padding: 12px 20px; border-radius: 50px; border: 1px solid rgba(255, 255, 255, 0.2);
-            color: white; display: flex; align-items: center; gap: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+        /* 旅人輸入區：預設隱藏 (大螢幕模式) */
+        .traveler-box { display: none; }
+
+        /* 手機/小螢幕模式 (寬度小於 1024px) 顯示輸入區 */
+        @media (max-width: 1024px) {
+            .system-title { font-size: 8vw; }
+            .label { font-size: 6vw; }
+            .current-number { font-size: 30vw; }
+            #marquee { font-size: 1.5rem; }
+
+            .traveler-box {
+                display: flex; flex-direction: column; 
+                margin-top: 30px; z-index: 20; 
+                background: rgba(0, 168, 255, 0.15);
+                padding: 20px; border-radius: 25px; 
+                border: 2px solid var(--brand-light);
+                color: white; align-items: center; gap: 15px;
+                box-shadow: 0 0 20px rgba(0, 168, 255, 0.3);
+                animation: glow 3s infinite alternate;
+            }
+            .traveler-box span { font-size: 1.3rem; font-weight: bold; letter-spacing: 1px; }
+            .traveler-box input {
+                width: 120px; height: 60px;
+                background: rgba(0,0,0,0.6); border: 3px solid var(--accent-gold);
+                color: var(--accent-gold); font-size: 2.5rem; font-weight: 900;
+                text-align: center; border-radius: 15px; outline: none;
+            }
         }
-        .traveler-box input {
-            width: 70px; background: rgba(0,0,0,0.4); border: 2px solid var(--brand-light);
-            color: var(--accent-gold); font-size: 1.2rem; text-align: center; border-radius: 10px; outline: none;
+
+        @keyframes glow {
+            from { box-shadow: 0 0 10px rgba(0, 168, 255, 0.2); }
+            to { box-shadow: 0 0 25px rgba(0, 168, 255, 0.5); }
         }
         
-        /* 配對成功特效 */
         .matched-alert { 
             border-color: var(--danger) !important; 
             box-shadow: 0 0 80px rgba(231, 76, 60, 0.8) !important;
             transform: scale(1.05);
             animation: flashBorder 0.5s infinite alternate;
         }
-        @keyframes flashBorder { 
-            from { border-color: var(--danger); } to { border-color: white; } 
-        }
-
-        @media (max-width: 600px) {
-            .system-title { font-size: 8vw; }
-            .label { font-size: 6vw; }
-            .current-number { font-size: 30vw; }
-            .traveler-box { font-size: 0.9rem; padding: 10px 15px; }
-            #marquee { font-size: 1.5rem; }
-        }
+        @keyframes flashBorder { from { border-color: var(--danger); } to { border-color: white; } }
     </style>
 </head>
 <body id="bgBody">
@@ -85,7 +96,7 @@
     </div>
 
     <div class="traveler-box" id="travelerUI">
-        <span>您的號碼：</span>
+        <span>請輸入您抽的號碼</span>
         <input type="number" id="myNumInput" placeholder="---" oninput="saveMyNum()">
     </div>
 
@@ -142,38 +153,53 @@
                 synth.cancel();
                 isSpeaking = false;
 
-                // --- 旅人專屬配對邏輯 ---
+                // 判斷是否為大螢幕 (輸入框是否顯示)
+                const travelerUI = document.getElementById('travelerUI');
+                const isBigScreen = window.getComputedStyle(travelerUI).display === 'none';
+                
                 const myNum = document.getElementById('myNumInput').value;
-                if (myNum && parseInt(myNum) === data.number) {
-                    if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
-                    const alertMsg = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
-                    alertMsg.lang = "zh-TW"; alertMsg.pitch = 1.2;
-                    synth.speak(alertMsg);
-                    
-                    const panel = document.getElementById('mainPanel');
-                    panel.classList.add('matched-alert');
-                    setTimeout(() => panel.classList.remove('matched-alert'), 15000);
+                const isMatched = (myNum && parseInt(myNum) === data.number);
+
+                // --- 手機端智慧沈默邏輯 ---
+                // 如果不是大螢幕，且號碼沒配對成功，就不播放任何聲音
+                if (!isBigScreen && !isMatched) {
+                    return; 
                 }
 
-                // --- 標準多國語音叫號 ---
                 setTimeout(() => {
                     if (isSpeaking) return;
                     isSpeaking = true;
                     const allVoices = synth.getVoices();
                     let queue = [];
                     const getV = (pref, lang) => allVoices.find(v => v.name === pref) || allVoices.find(v => v.lang.includes(lang));
-                    const langItems = [];
-                    if (data.langs.zh.enabled) langItems.push({ text: `請第 ${data.number} 號旅人準備搭乘`, pref: data.langs.zh.voice, lang: 'zh-TW' });
-                    if (data.langs.en.enabled) langItems.push({ text: `Traveler number ${data.number}, please prepare`, pref: data.langs.en.voice, lang: 'en-US' });
-                    if (data.langs.jp.enabled) langItems.push({ text: `${data.number} 番の旅人様、ご準備ください`, pref: data.langs.jp.voice, lang: 'ja-JP' });
 
-                    for (let r = 0; r < (data.repeat || 1); r++) {
-                        langItems.forEach(item => {
-                            const u = new SpeechSynthesisUtterance(item.text);
-                            u.voice = getV(item.pref, item.lang.substring(0, 2));
-                            u.lang = item.lang; u.volume = data.volume || 1; u.rate = 0.9;
-                            queue.push(u);
-                        });
+                    // 1. 如果配對成功，加入專屬提醒
+                    if (isMatched) {
+                        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+                        const alertMsg = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
+                        alertMsg.lang = "zh-TW"; alertMsg.pitch = 1.2;
+                        queue.push(alertMsg);
+
+                        const panel = document.getElementById('mainPanel');
+                        panel.classList.add('matched-alert');
+                        setTimeout(() => panel.classList.remove('matched-alert'), 15000);
+                    }
+
+                    // 2. 只有大螢幕或是號碼配對成功的手機，才播放多國語音廣播
+                    if (isBigScreen || isMatched) {
+                        const langItems = [];
+                        if (data.langs.zh.enabled) langItems.push({ text: `請第 ${data.number} 號旅人準備搭乘`, pref: data.langs.zh.voice, lang: 'zh-TW' });
+                        if (data.langs.en.enabled) langItems.push({ text: `Traveler number ${data.number}, please prepare`, pref: data.langs.en.voice, lang: 'en-US' });
+                        if (data.langs.jp.enabled) langItems.push({ text: `${data.number} 番の旅人様、ご準備ください`, pref: data.langs.jp.voice, lang: 'ja-JP' });
+
+                        for (let r = 0; r < (data.repeat || 1); r++) {
+                            langItems.forEach(item => {
+                                const u = new SpeechSynthesisUtterance(item.text);
+                                u.voice = getV(item.pref, item.lang.substring(0, 2));
+                                u.lang = item.lang; u.volume = data.volume || 1; u.rate = 0.9;
+                                queue.push(u);
+                            });
+                        }
                     }
 
                     const playNext = (idx) => {
