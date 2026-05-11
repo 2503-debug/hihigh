@@ -33,32 +33,34 @@
         #marquee { position: absolute; white-space: nowrap; font-size: 2rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
         @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
 
-        /* 主面板 */
+        /* 主面板內容 */
         .system-title { font-size: 3.5vw; font-weight: bold; margin-bottom: 15px; letter-spacing: 0.5vw; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; z-index: 10; text-align: center; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 85%; max-width: 1000px; padding: 4vh 2vw; border-radius: 40px; border: 4px solid rgba(0, 168, 255, 0.5); position: relative; z-index: 10; transition: all 0.3s; }
+        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); width: 85%; max-width: 1000px; padding: 4vh 2vw; border-radius: 40px; border: 4px solid rgba(0, 168, 255, 0.5); position: relative; z-index: 10; transition: all 0.3s; display: block !important; }
         .label { font-size: 2.5vw; margin-bottom: 10px; color: #f8fafc; font-weight: bold; }
         .current-number { font-size: 16vw; font-weight: 900; color: var(--accent-gold); line-height: 0.9; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
 
-        /* 旅人輸入區：大螢幕時隱藏 */
-        .traveler-box { display: none; }
+        /* 旅人輸入區：預設在大螢幕隱藏 */
+        .traveler-box { display: none !important; }
 
-        @media (max-width: 1024px) {
+        /* 手機模式 CSS */
+        @media screen and (max-width: 1023px) {
             .system-title { font-size: 8vw; }
             .label { font-size: 6vw; }
             .current-number { font-size: 30vw; }
             #marquee { font-size: 1.5rem; }
 
             .traveler-box {
-                display: flex; flex-direction: column; align-items: center;
+                display: flex !important; /* 手機端強制顯示 */
+                flex-direction: column; align-items: center;
                 margin-top: 30px; z-index: 20; background: rgba(0, 168, 255, 0.15);
                 padding: 20px; border-radius: 25px; border: 2px solid var(--brand-light);
                 color: white; gap: 10px; box-shadow: 0 0 20px rgba(0, 168, 255, 0.2);
             }
-            .traveler-box span { font-size: 1.3rem; font-weight: bold; }
+            .traveler-box span { font-size: 1.2rem; font-weight: bold; }
             .traveler-box input {
                 width: 120px; height: 65px; background: rgba(0,0,0,0.6); border: 3px solid var(--accent-gold);
                 color: var(--accent-gold); font-size: 2.5rem; font-weight: 900;
-                text-align: center; border-radius: 15px; outline: none; transition: all 0.3s;
+                text-align: center; border-radius: 15px; outline: none;
             }
         }
 
@@ -112,7 +114,7 @@
         let isSpeaking = false;
         let saveStatusTimer;
 
-        // --- 輸入反饋邏輯 ---
+        // 輸入反饋邏輯
         function triggerSaveFeedback() {
             const inputEl = document.getElementById('myNumInput');
             const statusEl = document.getElementById('saveStatus');
@@ -169,13 +171,14 @@
                 synth.cancel();
                 isSpeaking = false;
 
-                // 判斷是否為大螢幕
+                // 智慧分流：判斷目前輸入框是否顯示
                 const travelerUI = document.getElementById('travelerUI');
                 const isBigScreen = window.getComputedStyle(travelerUI).display === 'none';
+                
                 const myNum = document.getElementById('myNumInput').value;
                 const isMatched = (myNum && parseInt(myNum) === data.number);
 
-                // 手機智慧沈默判斷
+                // 手機智慧沈默判斷：如果不是大螢幕且號碼沒配對，就不發聲
                 if (!isBigScreen && !isMatched) return; 
 
                 setTimeout(() => {
@@ -185,19 +188,19 @@
                     let queue = [];
                     const getV = (pref, lang) => allVoices.find(v => v.name === pref) || allVoices.find(v => v.lang.includes(lang));
 
-                    // 1. 專屬提醒音
+                    // 1. 匹配成功專屬提醒音
                     if (isMatched) {
                         if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
                         const alertMsg = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
                         alertMsg.lang = "zh-TW"; alertMsg.pitch = 1.2;
                         queue.push(alertMsg);
-                        
+
                         const panel = document.getElementById('mainPanel');
                         panel.classList.add('matched-alert');
                         setTimeout(() => panel.classList.remove('matched-alert'), 15000);
                     }
 
-                    // 2. 多國語音（大螢幕或匹配成功的手機才播）
+                    // 2. 廣播多國語音（大螢幕或匹配成功的手機播放）
                     if (isBigScreen || isMatched) {
                         const langItems = [];
                         if (data.langs.zh.enabled) langItems.push({ text: `請第 ${data.number} 號旅人準備搭乘`, pref: data.langs.zh.voice, lang: 'zh-TW' });
