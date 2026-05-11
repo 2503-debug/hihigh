@@ -2,7 +2,7 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Hi&High 飛翔提案所 - 專業雲端看板</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -26,29 +26,59 @@
             100% { transform: scale(1); opacity: 1; }
         }
 
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; background: #000; }
+        html, body { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow-x: hidden; 
+            background: #000; 
+            position: relative;
+        }
 
         body {
             font-family: 'Noto Sans TC', sans-serif;
-            background: linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e40af);
+            background-image: linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e40af);
             background-size: 400% 400%;
             animation: gradientBG 15s ease infinite;
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
+            background-attachment: fixed;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             min-height: 100vh;
+            min-height: -webkit-fill-available;
+        }
+
+        @media (max-width: 1024px) {
+            body { background-attachment: scroll; }
         }
 
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1; pointer-events: none; }
+        .bg-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.4); 
+            z-index: 1; pointer-events: none; 
+        }
 
+        /* --- 跑馬燈容器優化 --- */
         #infoBar {
             position: fixed; top: 15px; width: 94%; left: 3%;
             background: rgba(231, 76, 60, 0.95); backdrop-filter: blur(10px);
-            color: white; height: 45px; line-height: 45px;
+            color: white; 
+            height: 70px; /* 加大高度以容納大字體 */
+            line-height: 70px; /* 文字垂直置中 */
             z-index: 100; display: none; overflow: hidden; border-radius: 50px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
-        #marquee { position: absolute; white-space: nowrap; font-size: 1.2rem; font-weight: 900; animation: scrollText 20s linear infinite; }
+
+        /* --- 跑馬燈文字加大 --- */
+        #marquee { 
+            position: absolute; 
+            white-space: nowrap; 
+            font-size: 2.2rem; /* 字體從 1.2rem 加大到 2.2rem */
+            font-weight: 900; 
+            letter-spacing: 2px;
+            animation: scrollText 20s linear infinite; 
+        }
 
         .system-title {
             font-size: 2.8vw; font-weight: 900; margin-bottom: 20px;
@@ -83,11 +113,13 @@
         .traveler-box { display: none !important; }
 
         @media screen and (max-width: 1024px) {
-            body { justify-content: flex-start; padding: 80px 0 50px 0; overflow-y: auto; }
+            body { justify-content: flex-start; padding: 100px 0 50px 0; overflow-y: auto; }
             .system-title { font-size: 8vw; }
             .display-panel { width: 88%; padding: 40px 15px; }
             .current-number { font-size: 32vw; }
             .label { font-size: 5vw; }
+            #infoBar { height: 60px; line-height: 60px; top: 10px; }
+            #marquee { font-size: 1.8rem; }
 
             .waiting-status {
                 position: relative; bottom: auto; right: auto; margin: 25px auto; 
@@ -199,7 +231,18 @@
         let isSpeaking = false;
         db.ref('call_data').on('value', snap => {
             const data = snap.val(); if (!data) return;
-            if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
+            if (data.bg) {
+                const body = document.getElementById('bgBody');
+                body.style.backgroundImage = `url(${data.bg})`;
+                body.style.backgroundRepeat = "no-repeat";
+                body.style.backgroundPosition = "center center";
+                body.style.backgroundSize = "cover";
+                if (window.innerWidth <= 1024) {
+                    body.style.backgroundAttachment = "scroll";
+                } else {
+                    body.style.backgroundAttachment = "fixed";
+                }
+            }
             if (data.message && data.message.trim() !== "") {
                 document.getElementById('msgText').innerText = data.message + "　　　　　";
                 document.getElementById('infoBar').style.display = "block";
@@ -232,8 +275,28 @@
                     setTimeout(() => document.getElementById('mainPanel').classList.remove('matched-alert'), 10000);
                     const m = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘"); m.lang = "zh-TW"; queue.push(m);
                 }
-                const conf = [{k:'zh',t:`請第 ${data.number} 號旅人準備搭乘`,l:'zh-TW'},{k:'en',t:`Number ${data.number}, please prepare`,l:'en-US'},{k:'jp',t:`${data.number} 番の旅人様、ご準備ください`,l:'ja-JP'}];
-                conf.forEach(c => { if(data.langs[c.k].enabled) { const u = new SpeechSynthesisUtterance(c.t); const v = voices.find(voice => voice.name === data.langs[c.k].voice); if (v) u.voice = v; u.lang = c.l; u.rate = 0.95; queue.push(u); } });
+
+                const confs = [
+                    {k:'zh', t:`請第 ${data.number} 號旅人準備搭乘`, l:'zh-TW'},
+                    {k:'en', t:`Number ${data.number}, please prepare`, l:'en-US'},
+                    {k:'jp', t:`${data.number} 番の旅人様、ご準備ください`, l:'ja-JP'}
+                ];
+                
+                confs.forEach(c => {
+                    const setting = data.langs[c.k];
+                    if(setting && setting.enabled) {
+                        const repeatCount = setting.repeat || 1; 
+                        for(let i = 0; i < repeatCount; i++) {
+                            const u = new SpeechSynthesisUtterance(c.t);
+                            const v = voices.find(voice => voice.name === setting.voice);
+                            if (v) u.voice = v;
+                            u.lang = c.l;
+                            u.rate = 0.95;
+                            queue.push(u);
+                        }
+                    }
+                });
+                
                 const play = (i) => { if (i >= queue.length) { isSpeaking = false; return; } queue[i].onend = () => { setTimeout(() => play(i+1), 400); }; synth.speak(queue[i]); };
                 play(0);
             }, 300);

@@ -3,220 +3,245 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi&High 控制台 - 專業管理系統</title>
+    <title>Hi&High 控制台 - 專業旗艦版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
-        :root { --primary: #00a8ff; --secondary: #1e293b; --accent: #f1c40f; --success: #27ae60; --danger: #e74c3c; }
-        body { font-family: 'PingFang TC', sans-serif; background: #f1f5f9; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        body { font-family: -apple-system, "Segoe UI", Roboto, sans-serif; background: #f0f2f5; padding: 20px; color: #1c1e21; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; gap: 20px; flex-wrap: wrap; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); flex: 1; min-width: 350px; display: flex; flex-direction: column; }
+        h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
         
-        .sidebar { width: 260px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; box-shadow: 2px 0 10px rgba(0,0,0,0.05); flex-shrink: 0; }
-        .sidebar-header { padding: 15px; background: var(--secondary); color: white; text-align: center; }
-        .sidebar-content { padding: 10px; flex-grow: 1; overflow-y: auto; }
+        /* 叫號顯示區 */
+        .number-display { font-size: 4rem; font-weight: bold; text-align: center; color: #f1c40f; background: #2c3e50; padding: 15px; border-radius: 8px; margin: 10px 0; }
+        .input-group { display: flex; gap: 5px; margin-bottom: 12px; }
+        input[type="number"], input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; }
+        
+        /* 按鈕樣式 */
+        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        button { flex: 1; padding: 12px; font-size: 1rem; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; font-weight: bold; }
+        .btn-next { background: #27ae60; color: white; }
+        .btn-prev { background: #7f8c8d; color: white; }
+        .btn-set { background: #3498db; color: white; flex: none; width: 80px; }
+        .btn-reset { background: #e74c3c; color: white; width: 100%; margin-top: 5px; }
+        .btn-clear { background: #95a5a6; color: white; flex: none; width: 80px; }
+        .btn-issue { background: #8e44ad; color: white; width: 100%; font-size: 1.1rem; margin-top: 10px; }
+        button:hover { opacity: 0.8; }
 
-        .main-content { flex-grow: 1; padding: 20px; overflow-y: auto; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); margin-bottom: 20px; }
-        
-        .stat-grid { display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px; }
-        .stat-item { background: #f8fafc; padding: 15px; border-radius: 8px; text-align: center; border: 1px solid #e2e8f0; }
-        .stat-value { font-size: 2rem; font-weight: bold; color: var(--primary); display: block; }
-        .stat-label { font-size: 0.85rem; color: #64748b; font-weight: bold; }
+        /* 語音設定 */
+        .lang-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: #f8f9fa; padding: 8px; border-radius: 6px; font-size: 0.85rem; }
+        select { flex: 1; padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; }
+        .rep-in { width: 40px !important; text-align: center; padding: 5px !important; }
 
-        .history-list { font-size: 0.85rem; }
-        .history-item { padding: 8px; border-bottom: 1px solid #f1f5f9; background: #fff; margin-bottom: 6px; border-radius: 6px; border-left: 4px solid var(--primary); }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-        .history-num { font-weight: bold; color: var(--secondary); font-size: 1rem; }
-        .history-time { font-size: 0.7rem; color: #94a3b8; }
-        .history-body { font-size: 0.75rem; color: #475569; line-height: 1.4; background: #f8fafc; padding: 5px; border-radius: 4px; }
-
-        .control-group { margin-bottom: 15px; }
-        label { display: block; font-weight: bold; margin-bottom: 5px; color: var(--secondary); font-size: 0.9rem; }
-        input, select { width: 100%; padding: 10px; border: 2px solid #e2e8f0; border-radius: 8px; font-size: 0.95rem; box-sizing: border-box; }
-        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
-        button { flex: 1; padding: 10px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: opacity 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: var(--success); color: white; }
-        .btn-step { background: #e2e8f0; color: var(--secondary); font-size: 1.1rem; }
+        /* LOG 區 */
+        #logConsole { background: #1e293b; color: #38bdf8; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; height: 150px; overflow-y: auto; margin-top: 10px; line-height: 1.5; }
         
-        .voice-section { background: #f8fafc; padding: 12px; border-radius: 8px; border: 1px solid #e2e8f0; margin-top: 10px; }
-        .lang-options { display: flex; gap: 10px; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #ddd; }
-        .lang-item { display: flex; align-items: center; gap: 4px; font-weight: bold; font-size: 0.85rem; cursor: pointer; }
-        
-        #preview-bg { width: 100%; height: 80px; object-fit: cover; border-radius: 8px; margin-top: 10px; display: none; border: 1px solid #ddd; }
+        .stat-box { background: #eef2ff; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        .label-sm { font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; display: block; color: #444; }
     </style>
 </head>
 <body>
 
-    <div class="sidebar">
-        <div class="sidebar-header"><h2 style="margin:0; font-size:1rem;">📊 現場實時監控</h2></div>
-        <div class="sidebar-content">
-            <div class="stat-grid">
-                <div class="stat-item">
-                    <span class="stat-value" id="onlineCount">0</span>
-                    <span class="stat-label">📱 手機候位中</span>
-                </div>
-            </div>
-            <h3 style="font-size:0.85rem; color:var(--secondary); border-left:3px solid var(--primary); padding-left:8px; margin-bottom:10px;">🕒 叫號紀錄 (50筆)</h3>
-            <div id="historyList" class="history-list"><p style="color:#94a3b8; font-size:0.8rem;">尚無紀錄...</p></div>
+<div class="container">
+    <div class="card">
+        <h2>🔢 叫號控制系統</h2>
+        <div class="number-display" id="currentNum">000</div>
+        
+        <span class="label-sm">手動設定目前叫號</span>
+        <div class="input-group">
+            <input type="number" id="manualNum" placeholder="輸入號碼...">
+            <button class="btn-set" onclick="setManualNum()">設定</button>
         </div>
+
+        <div class="btn-row">
+            <button class="btn-prev" onclick="changeNum(-1)">前一號</button>
+            <button class="btn-next" onclick="changeNum(1)">下一號</button>
+        </div>
+        <button class="btn-reset" onclick="resetNum()">重設為 0</button>
+
+        <h2 style="margin-top: 25px;">🎟️ 發票管理 (抽號)</h2>
+        <div class="stat-box">
+            <span class="label-sm">目前已發放至 (可手動更新)</span>
+            <div class="input-group">
+                <input type="number" id="manualTotal" placeholder="更新發放數...">
+                <button class="btn-set" onclick="setManualTotal()">更新</button>
+            </div>
+            <button class="btn-issue" onclick="issueNewTicket()">＋ 發放下一張票</button>
+        </div>
+        
+        <h2 style="margin-top: 20px;">📜 操作紀錄 (LOG)</h2>
+        <div id="logConsole">系統初始化中...</div>
     </div>
 
-    <div class="main-content">
-        <div class="card">
-            <h2 style="margin-top:0; color:var(--primary); font-size:1.3rem;">🚀 號碼廣播控制</h2>
-            <div class="control-group">
-                <label>目前號碼</label>
-                <input type="number" id="numInput" value="0">
-                <div class="btn-row">
-                    <button class="btn-step" onclick="adjustNum(-1)">- 1</button>
-                    <button class="btn-step" onclick="adjustNum(1)">+ 1</button>
-                </div>
-                <div class="voice-section">
-                    <label>語言開關</label>
-                    <div class="lang-options">
-                        <label class="lang-item"><input type="checkbox" id="chk_zh" checked> 中</label>
-                        <label class="lang-item"><input type="checkbox" id="chk_en" checked> 英</label>
-                        <label class="lang-item"><input type="checkbox" id="chk_jp" checked> 日</label>
-                    </div>
-                    <label>中文人聲</label><select id="voice_zh"></select>
-                    <label style="margin-top:8px;">英文人聲</label><select id="voice_en"></select>
-                    <label style="margin-top:8px;">日文人聲</label><select id="voice_jp"></select>
-                </div>
-                <button class="btn-success" style="width:100%; margin-top:15px; font-size:1.1rem;" onclick="sendData('num')">發送叫號指令</button>
+    <div class="card">
+        <h2>🔊 語音廣播設定</h2>
+        <div id="voiceSettings">
+            <div class="lang-item">
+                <input type="checkbox" id="zh_en" checked onchange="saveSettings()"> 中
+                <select id="zh_voice" onchange="saveSettings()"></select>
+                <input type="number" id="zh_rep" class="rep-in" value="1" onchange="saveSettings()">次
+            </div>
+            <div class="lang-item">
+                <input type="checkbox" id="en_en" onchange="saveSettings()"> 英
+                <select id="en_voice" onchange="saveSettings()"></select>
+                <input type="number" id="en_rep" class="rep-in" value="1" onchange="saveSettings()">次
+            </div>
+            <div class="lang-item">
+                <input type="checkbox" id="jp_en" onchange="saveSettings()"> 日
+                <select id="jp_voice" onchange="saveSettings()"></select>
+                <input type="number" id="jp_rep" class="rep-in" value="1" onchange="saveSettings()">次
             </div>
         </div>
 
-        <div class="card" style="border-top: 5px solid var(--accent);">
-            <h2 style="margin-top:0; color:var(--secondary); font-size:1.3rem;">🎟️ 發券進度管理</h2>
-            <div class="control-group">
-                <label>目前已抽發總號碼數</label>
-                <div style="display: flex; gap: 10px; align-items: center;">
-                    <input type="number" id="totalIssuedInput" value="0" style="font-size: 1.5rem; color: var(--danger); font-weight: bold;">
-                    <button class="btn-primary" style="flex: 0.4;" onclick="sendTotalIssued()">更新總數</button>
-                </div>
-            </div>
+        <h2 style="margin-top: 20px;">📢 跑馬燈與背景</h2>
+        <span class="label-sm">跑馬燈訊息</span>
+        <div class="input-group">
+            <input type="text" id="marqueeMsg" placeholder="輸入公告內容...">
+            <button class="btn-clear" onclick="clearMarquee()">清除</button>
         </div>
+        <button class="btn-set" style="width:100%; margin-bottom:15px; background: #6366f1;" onclick="saveSettings()">發佈跑馬燈</button>
 
-        <div class="card">
-            <h2 style="margin-top:0; color:var(--primary); font-size:1.3rem;">📢 看板內容與背景</h2>
-            <div class="control-group">
-                <label>跑馬燈訊息</label>
-                <input type="text" id="msgInput" placeholder="請輸入訊息...">
-                <div class="btn-row">
-                    <button class="btn-primary" onclick="sendData('msg')">更新文字</button>
-                    <button style="background:#64748b; color:white; flex:0.3;" onclick="clearMsg()">清空</button>
-                </div>
-            </div>
-            <div class="control-group">
-                <label>上傳背景圖片</label>
-                <input type="file" id="fileInput" accept="image/*" onchange="previewImage(this)">
-                <img id="preview-bg" src="" alt="預覽">
-                <button class="btn-primary" style="margin-top:10px; width:100%;" onclick="sendData('bg')">更新背景</button>
-            </div>
+        <span class="label-sm">背景設定 (URL 或 上傳)</span>
+        <input type="text" id="bgUrl" placeholder="圖片網址 https://..." onchange="saveSettings()" style="margin-bottom:8px;">
+        <input type="file" id="bgFile" accept="image/*" onchange="uploadBg()" style="font-size:0.8rem;">
+
+        <div class="stat-box">
+            <strong>📊 現場統計</strong>
+            <div style="margin-top:5px; font-size:0.9rem;">看板在線人數：<span id="statOnline" style="color:#2563eb; font-weight:bold;">0</span></div>
         </div>
     </div>
+</div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
-            authDomain: "hihigh-system.firebaseapp.com",
-            databaseURL: "https://hihigh-system-default-rtdb.firebaseio.com",
-            projectId: "hihigh-system",
-            storageBucket: "hihigh-system.firebasestorage.app",
-            messagingSenderId: "969837475229",
-            appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
-            measurementId: "G-V62MTFXC8N"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.database();
-        const synth = window.speechSynthesis;
-        let currentBgBase64 = "";
+<script>
+    const firebaseConfig = {
+        apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
+        authDomain: "hihigh-system.firebaseapp.com",
+        databaseURL: "https://hihigh-system-default-rtdb.firebaseio.com",
+        projectId: "hihigh-system",
+        storageBucket: "hihigh-system.firebasestorage.app",
+        messagingSenderId: "969837475229",
+        appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
+        measurementId: "G-V62MTFXC8N"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    let currentNumber = 0;
+    let totalIssued = 0;
 
-        function loadVoices() {
-            const voices = synth.getVoices();
-            const zhSelect = document.getElementById('voice_zh');
-            const enSelect = document.getElementById('voice_en');
-            const jpSelect = document.getElementById('voice_jp');
-            [zhSelect, enSelect, jpSelect].forEach(s => s.innerHTML = '');
+    function addLog(msg) {
+        const log = document.getElementById('logConsole');
+        const time = new Date().toLocaleTimeString('zh-TW', {hour12:false});
+        log.innerHTML = `[${time}] ${msg}<br>` + log.innerHTML;
+    }
+
+    function populateVoiceList() {
+        const voices = window.speechSynthesis.getVoices();
+        ['zh_voice', 'en_voice', 'jp_voice'].forEach(id => {
+            const s = document.getElementById(id);
+            const val = s.value;
+            s.innerHTML = '';
             voices.forEach(v => {
                 const opt = document.createElement('option');
-                opt.value = v.name; opt.innerText = v.name;
-                if (v.lang.includes('zh')) zhSelect.appendChild(opt.cloneNode(true));
-                if (v.lang.includes('en')) enSelect.appendChild(opt.cloneNode(true));
-                if (v.lang.includes('ja')) jpSelect.appendChild(opt.cloneNode(true));
+                opt.textContent = v.name; opt.value = v.name;
+                s.appendChild(opt);
             });
-        }
-        if (speechSynthesis.onvoiceschanged !== undefined) speechSynthesis.onvoiceschanged = loadVoices;
-        loadVoices();
+            if (val) s.value = val;
+        });
+    }
+    window.speechSynthesis.onvoiceschanged = populateVoiceList;
 
-        function previewImage(input) {
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    currentBgBase64 = e.target.result;
-                    const preview = document.getElementById('preview-bg');
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                };
-                reader.readAsDataURL(input.files[0]);
+    db.ref('call_data/number').on('value', snap => {
+        currentNumber = snap.val() || 0;
+        document.getElementById('currentNum').innerText = currentNumber.toString().padStart(3, '0');
+    });
+
+    db.ref('issue_stats/totalIssued').on('value', snap => {
+        totalIssued = snap.val() || 0;
+        document.getElementById('manualTotal').value = totalIssued;
+        addLog(`同步發票總數: ${totalIssued}`);
+    });
+
+    function changeNum(step) {
+        currentNumber += step;
+        if (currentNumber < 0) currentNumber = 0;
+        updateDbNum(`手動調整至 ${currentNumber}`);
+    }
+
+    function setManualNum() {
+        const val = parseInt(document.getElementById('manualNum').value);
+        if (!isNaN(val)) {
+            currentNumber = val;
+            updateDbNum(`跳號設定至 ${currentNumber}`);
+            // 已移除：document.getElementById('manualNum').value = ''; 數字現在會保留
+        }
+    }
+
+    function updateDbNum(logMsg) {
+        db.ref('call_data').update({ number: currentNumber, timestamp: Date.now(), updateType: 'num' });
+        addLog(logMsg);
+    }
+
+    function setManualTotal() {
+        const val = parseInt(document.getElementById('manualTotal').value);
+        if (!isNaN(val)) {
+            totalIssued = val;
+            db.ref('issue_stats').update({ totalIssued: totalIssued });
+            addLog(`更新發放總數為 ${totalIssued}`);
+        }
+    }
+
+    function issueNewTicket() {
+        totalIssued++;
+        db.ref('issue_stats').update({ totalIssued: totalIssued });
+        addLog(`發放新票據: 第 ${totalIssued} 號`);
+    }
+
+    function resetNum() {
+        if(confirm("確定重設叫號？")) {
+            db.ref('call_data').update({ number: 0, timestamp: Date.now(), updateType: 'reset' });
+            addLog("!! 重設叫號為 0 !!");
+        }
+    }
+
+    function clearMarquee() {
+        document.getElementById('marqueeMsg').value = '';
+        saveSettings();
+        addLog("清除跑馬燈");
+    }
+
+    function saveSettings() {
+        const data = {
+            bg: document.getElementById('bgUrl').value,
+            message: document.getElementById('marqueeMsg').value,
+            langs: {
+                zh: { enabled: document.getElementById('zh_en').checked, voice: document.getElementById('zh_voice').value, repeat: parseInt(document.getElementById('zh_rep').value)||1 },
+                en: { enabled: document.getElementById('en_en').checked, voice: document.getElementById('en_voice').value, repeat: parseInt(document.getElementById('en_rep').value)||1 },
+                jp: { enabled: document.getElementById('jp_en').checked, voice: document.getElementById('jp_voice').value, repeat: parseInt(document.getElementById('jp_rep').value)||1 }
             }
-        }
+        };
+        db.ref('call_data').update(data);
+        addLog("已更新語音/背景/跑馬燈設定");
+    }
 
-        db.ref('traveler_stats').on('value', snap => {
-            const stats = snap.val() || {};
-            document.getElementById('onlineCount').innerText = Object.keys(stats).length;
-        });
+    function uploadBg() {
+        const file = document.getElementById('bgFile').files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const base64String = e.target.result;
+            document.getElementById('bgUrl').value = base64String;
+            saveSettings();
+            addLog("背景圖片上傳成功 (Base64)");
+        };
+        reader.readAsDataURL(file);
+    }
 
-        db.ref('issue_stats/totalIssued').on('value', snap => {
-            if(snap.exists()) document.getElementById('totalIssuedInput').value = snap.val();
-        });
+    db.ref('traveler_stats').on('value', snap => {
+        document.getElementById('statOnline').innerText = Object.keys(snap.val() || {}).length;
+    });
 
-        function sendTotalIssued() {
-            db.ref('issue_stats').set({ totalIssued: parseInt(document.getElementById('totalIssuedInput').value), timestamp: Date.now() });
-            alert("發券總數已更新");
-        }
+    setTimeout(() => { populateVoiceList(); addLog("控制台已就緒"); }, 800);
+</script>
 
-        let callHistory = [];
-        db.ref('call_data').on('value', snap => {
-            const data = snap.val();
-            if (!data || data.updateType !== 'num') return;
-            if (callHistory.length === 0 || callHistory[0].timestamp !== data.timestamp) {
-                const time = new Date(data.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit', second:'2-digit'});
-                let l = [];
-                if(data.langs.zh.enabled) l.push("中");
-                if(data.langs.en.enabled) l.push("英");
-                if(data.langs.jp.enabled) l.push("日");
-                callHistory.unshift({ number: data.number, time: time, timestamp: data.timestamp, msg: data.message || "(無訊息)", langs: l.join('/') });
-                if (callHistory.length > 50) callHistory.pop();
-                document.getElementById('historyList').innerHTML = callHistory.map(h => `<div class="history-item"><div class="history-header"><span class="history-num">#${h.number.toString().padStart(3, '0')}</span><span class="history-time">${h.time}</span></div><div class="history-body">💬 ${h.msg}<br>🎙️ 語言：${h.langs}</div></div>`).join('');
-            }
-        });
-
-        function adjustNum(offset) {
-            const input = document.getElementById('numInput');
-            input.value = Math.max(0, parseInt(input.value) + offset);
-        }
-
-        function clearMsg() {
-            document.getElementById('msgInput').value = "";
-            sendData('msg');
-        }
-
-        function sendData(type) {
-            db.ref('call_data').set({
-                number: parseInt(document.getElementById('numInput').value),
-                message: document.getElementById('msgInput').value,
-                bg: (type === 'bg') ? currentBgBase64 : (type === 'num' ? "" : ""),
-                updateType: type,
-                timestamp: Date.now(),
-                repeat: 1, volume: 1,
-                langs: {
-                    zh: { enabled: document.getElementById('chk_zh').checked, voice: document.getElementById('voice_zh').value },
-                    en: { enabled: document.getElementById('chk_en').checked, voice: document.getElementById('voice_en').value },
-                    jp: { enabled: document.getElementById('chk_jp').checked, voice: document.getElementById('voice_jp').value }
-                }
-            });
-        }
-    </script>
 </body>
 </html>
