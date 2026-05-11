@@ -21,7 +21,6 @@
             font-display: swap;
         }
 
-        /* 優化 2: 號碼跳動動畫與平滑過渡 */
         @keyframes numPop {
             0% { transform: scale(0.9); opacity: 0; }
             100% { transform: scale(1); opacity: 1; }
@@ -42,7 +41,6 @@
 
         .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.3); z-index: 1; pointer-events: none; }
 
-        /* 跑馬燈 */
         #infoBar {
             position: fixed; top: 15px; width: 94%; left: 3%;
             background: rgba(231, 76, 60, 0.95); backdrop-filter: blur(10px);
@@ -71,7 +69,6 @@
             display: inline-block;
         }
 
-        /* 號碼更新時的動畫 class */
         .num-update { animation: numPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
         .waiting-status {
@@ -82,13 +79,6 @@
         .stat-label { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 5px; }
         .waiting-count { font-size: 2.2rem; font-weight: 900; color: var(--brand-cyan); font-family: 'Montserrat'; }
         .stat-footer { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; padding-top: 8px; font-size: 0.85rem; }
-
-        /* 斷線提醒樣式 */
-        #offlineAlert {
-            position: fixed; top: 0; left: 0; width: 100%; background: #e74c3c;
-            color: white; text-align: center; padding: 5px; font-size: 0.8rem;
-            z-index: 9999; display: none;
-        }
 
         .traveler-box { display: none !important; }
 
@@ -126,8 +116,6 @@
     </style>
 </head>
 <body id="bgBody">
-
-    <div id="offlineAlert">網路連線不穩定，正在嘗試自動重連...</div>
 
     <button id="audioUnlockBtn" onclick="unlockAudio()" style="position:fixed; bottom:20px; left:20px; z-index:9999; background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:50px; cursor:pointer; font-size:0.8rem; font-weight:900; opacity: 0.8; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🔊 啟動語音系統</button>
 
@@ -173,18 +161,6 @@
         const myId = Math.random().toString(36).substring(7);
         const travelerRef = db.ref('traveler_stats/' + myId);
 
-        // 優化 3: 網路狀態監測與重連
-        const connectedRef = db.ref(".info/connected");
-        connectedRef.on("value", (snap) => {
-            if (snap.val() === true) {
-                document.getElementById('offlineAlert').style.display = 'none';
-            } else {
-                setTimeout(() => { 
-                    if (snap.val() === false) document.getElementById('offlineAlert').style.display = 'block'; 
-                }, 3000);
-            }
-        });
-
         function updateOnlineStatus() {
             const isMobile = window.innerWidth <= 1024;
             const myNum = document.getElementById('myNumInput').value;
@@ -209,7 +185,6 @@
         function unlockAudio() {
             const u = new SpeechSynthesisUtterance("系統已就緒"); u.lang = "zh-TW"; 
             synth.speak(u); document.getElementById('audioUnlockBtn').style.display = 'none';
-            // 嘗試請求螢幕常亮
             if ('wakeLock' in navigator) {
                 navigator.wakeLock.request('screen').catch(err => console.log("WakeLock failed"));
             }
@@ -233,13 +208,10 @@
             if (data.timestamp > lastTimestamp) {
                 lastTimestamp = data.timestamp;
                 const numEl = document.getElementById('num');
-                
-                // 優化 4: 號碼切換特效
                 numEl.classList.remove('num-update');
-                void numEl.offsetWidth; // 觸發重繪
+                void numEl.offsetWidth; 
                 numEl.innerText = data.number.toString().padStart(3, '0');
                 numEl.classList.add('num-update');
-
                 if (data.updateType === 'num') handleVoiceCall(data);
             }
         });
@@ -254,40 +226,15 @@
             setTimeout(() => {
                 if (isSpeaking) return; isSpeaking = true;
                 let queue = []; const voices = synth.getVoices();
-                
                 if (isMatched) {
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
                     document.getElementById('mainPanel').classList.add('matched-alert');
                     setTimeout(() => document.getElementById('mainPanel').classList.remove('matched-alert'), 10000);
                     const m = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘"); m.lang = "zh-TW"; queue.push(m);
                 }
-
-                // 優化 5: 語音間隔處理
-                const conf = [
-                    {k:'zh',t:`請第 ${data.number} 號旅人準備搭乘`,l:'zh-TW'},
-                    {k:'en',t:`Number ${data.number}, please prepare`,l:'en-US'},
-                    {k:'jp',t:`${data.number} 番の旅人様、ご準備ください`,l:'ja-JP'}
-                ];
-                
-                conf.forEach(c => { 
-                    if(data.langs[c.k].enabled) { 
-                        const u = new SpeechSynthesisUtterance(c.t); 
-                        const v = voices.find(voice => voice.name === data.langs[c.k].voice);
-                        if (v) u.voice = v;
-                        u.lang = c.l;
-                        u.rate = 0.95; // 稍慢一點點，比較清晰
-                        queue.push(u); 
-                    } 
-                });
-                
-                const play = (i) => { 
-                    if (i >= queue.length) { isSpeaking = false; return; } 
-                    queue[i].onend = () => {
-                        // 每一種語言播完後，多停 400 毫秒再播下一種
-                        setTimeout(() => play(i+1), 400); 
-                    };
-                    synth.speak(queue[i]); 
-                };
+                const conf = [{k:'zh',t:`請第 ${data.number} 號旅人準備搭乘`,l:'zh-TW'},{k:'en',t:`Number ${data.number}, please prepare`,l:'en-US'},{k:'jp',t:`${data.number} 番の旅人様、ご準備ください`,l:'ja-JP'}];
+                conf.forEach(c => { if(data.langs[c.k].enabled) { const u = new SpeechSynthesisUtterance(c.t); const v = voices.find(voice => voice.name === data.langs[c.k].voice); if (v) u.voice = v; u.lang = c.l; u.rate = 0.95; queue.push(u); } });
+                const play = (i) => { if (i >= queue.length) { isSpeaking = false; return; } queue[i].onend = () => { setTimeout(() => play(i+1), 400); }; synth.speak(queue[i]); };
                 play(0);
             }, 300);
         }
