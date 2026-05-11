@@ -59,22 +59,20 @@
             z-index: 1; pointer-events: none; 
         }
 
-        /* --- 跑馬燈容器優化 --- */
         #infoBar {
             position: fixed; top: 15px; width: 94%; left: 3%;
             background: rgba(231, 76, 60, 0.95); backdrop-filter: blur(10px);
             color: white; 
-            height: 70px; /* 加大高度以容納大字體 */
-            line-height: 70px; /* 文字垂直置中 */
+            height: 70px; 
+            line-height: 70px; 
             z-index: 100; display: none; overflow: hidden; border-radius: 50px;
             box-shadow: 0 6px 20px rgba(0,0,0,0.4);
         }
 
-        /* --- 跑馬燈文字加大 --- */
         #marquee { 
             position: absolute; 
             white-space: nowrap; 
-            font-size: 2.2rem; /* 字體從 1.2rem 加大到 2.2rem */
+            font-size: 2.2rem; 
             font-weight: 900; 
             letter-spacing: 2px;
             animation: scrollText 20s linear infinite; 
@@ -163,7 +161,7 @@
     </div>
 
     <div class="waiting-status">
-        <div class="stat-label">目前等候中</div>
+        <div class="stat-label">目前等候中 (手機旅人)</div>
         <span class="waiting-count" id="uiWaitingCount">0</span>
         <div class="stat-footer">
             已發放號碼：<span id="uiTotalIssued" style="color:var(--accent-gold); font-weight:bold; font-size:1.2rem;">0</span>
@@ -193,18 +191,29 @@
         const myId = Math.random().toString(36).substring(7);
         const travelerRef = db.ref('traveler_stats/' + myId);
 
+        // 核心邏輯：區分裝置角色
         function updateOnlineStatus() {
             const isMobile = window.innerWidth <= 1024;
             const myNum = document.getElementById('myNumInput').value;
             if (isMobile && myNum !== "") { 
-                travelerRef.set({ isWaiting: true, timestamp: firebase.database.ServerValue.TIMESTAMP }); 
+                travelerRef.set({ 
+                    isWaiting: true, 
+                    role: 'mobile', // 標記為手機版
+                    timestamp: firebase.database.ServerValue.TIMESTAMP 
+                }); 
             } else { 
                 travelerRef.remove(); 
             }
         }
         travelerRef.onDisconnect().remove();
 
-        db.ref('traveler_stats').on('value', snap => { document.getElementById('uiWaitingCount').innerText = Object.keys(snap.val() || {}).length; });
+        // 核心邏輯：只統計手機版人數
+        db.ref('traveler_stats').on('value', snap => { 
+            const list = snap.val() || {};
+            const mobileCount = Object.values(list).filter(item => item.role === 'mobile').length;
+            document.getElementById('uiWaitingCount').innerText = mobileCount; 
+        });
+
         db.ref('issue_stats/totalIssued').on('value', snap => { document.getElementById('uiTotalIssued').innerText = snap.val() || 0; });
 
         function triggerFeedback() {
@@ -242,7 +251,12 @@
                 } else {
                     body.style.backgroundAttachment = "fixed";
                 }
+            } else {
+                // 如果後台清除背景，還原預設樣式
+                const body = document.getElementById('bgBody');
+                body.style.backgroundImage = 'linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e40af)';
             }
+
             if (data.message && data.message.trim() !== "") {
                 document.getElementById('msgText').innerText = data.message + "　　　　　";
                 document.getElementById('infoBar').style.display = "block";
