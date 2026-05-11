@@ -1,71 +1,55 @@
-<style>
-    /* ... 前面的樣式保持不變 ... */
-
-    /* 新增：輸入成功的閃爍效果 */
-    .save-success {
-        animation: successFlash 0.5s ease-out;
-    }
-    @keyframes successFlash {
-        0% { border-color: var(--brand-light); box-shadow: 0 0 0px var(--success); }
-        50% { border-color: #27ae60; box-shadow: 0 0 20px #27ae60; }
-        100% { border-color: var(--brand-light); box-shadow: 0 0 0px var(--success); }
-    }
-
-    /* 提示文字樣式 */
-    #saveStatus {
-        font-size: 0.85rem;
-        height: 1.2rem;
-        color: #27ae60;
-        font-weight: bold;
-        margin-top: 5px;
-        opacity: 0;
-        transition: opacity 0.3s;
-    }
-</style>
-
 <div class="traveler-box" id="travelerUI">
     <span>請輸入您抽的號碼</span>
-    <input type="number" id="myNumInput" placeholder="---" oninput="handleNumInput()">
-    <div id="saveStatus">✓ 設定成功，到號時將自動提醒</div>
+    <input type="number" id="myNumInput" placeholder="---" oninput="triggerSaveFeedback()">
+    <div id="saveStatus" style="opacity: 0; color: #27ae60; font-weight: bold; margin-top: 8px; transition: opacity 0.3s; font-size: 1rem;">
+        ✓ 設定成功，到號時將自動提醒
+    </div>
 </div>
 
 <script>
-    // ... Firebase 與其他變數保持不變 ...
+    // --- 這裡放更新後的 JavaScript 邏輯 ---
 
-    let saveTimer; // 用來控制提示文字消失
+    let saveStatusTimer;
 
-    function handleNumInput() {
-        const input = document.getElementById('myNumInput');
-        const status = document.getElementById('saveStatus');
+    function triggerSaveFeedback() {
+        const inputEl = document.getElementById('myNumInput');
+        const statusEl = document.getElementById('saveStatus');
         
-        // 1. 儲存號碼
-        localStorage.setItem('hihigh_num', input.value);
+        // 1. 立即儲存至本地
+        localStorage.setItem('hihigh_num', inputEl.value);
 
-        // 2. 觸發視覺反饋 (只有當有輸入數字時)
-        if (input.value.length > 0) {
-            // 重置動畫
-            input.classList.remove('save-success');
-            void input.offsetWidth; // 強制重繪
-            input.classList.add('save-success');
+        // 2. 判斷是否有內容，才顯示提醒
+        if (inputEl.value.trim() !== "") {
+            // 視覺回饋：輸入框閃爍綠光
+            inputEl.style.borderColor = "#27ae60";
+            inputEl.style.boxShadow = "0 0 15px rgba(39, 174, 96, 0.6)";
 
-            // 顯示提醒文字
-            status.style.opacity = "1";
-            
-            // 3 秒後自動隱藏提醒文字
-            clearTimeout(saveTimer);
-            saveTimer = setTimeout(() => {
-                status.style.opacity = "0";
+            // 顯示文字
+            statusEl.style.opacity = "1";
+
+            // 0.5 秒後恢復輸入框顏色 (但保留文字)
+            setTimeout(() => {
+                inputEl.style.borderColor = "var(--accent-gold)";
+                inputEl.style.boxShadow = "none";
+            }, 500);
+
+            // 3 秒後隱藏「設定成功」文字
+            clearTimeout(saveStatusTimer);
+            saveStatusTimer = setTimeout(() => {
+                statusEl.style.opacity = "0";
             }, 3000);
         } else {
-            status.style.opacity = "0";
+            // 如果清空輸入框，就直接隱藏文字
+            statusEl.style.opacity = "0";
         }
     }
 
-    // 確保 window.onload 也有載入正確的 function 名稱
+    // 確保原本的 window.onload 同時具備載入語音與載入號碼的功能
     window.onload = () => {
-        const saved = localStorage.getItem('hihigh_num');
-        if(saved) document.getElementById('myNumInput').value = saved;
+        if (typeof loadVoices === "function") loadVoices();
+        const savedNum = localStorage.getItem('hihigh_num');
+        if (savedNum) {
+            document.getElementById('myNumInput').value = savedNum;
+        }
     };
-
-    // ... 剩下的 Firebase 監聽與語音邏輯保持不變 ...
 </script>
