@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Hi&High 飛翔提案所 - 雲端同步看板</title>
+    <title>Hi&High 飛翔提案所 - 看板系統</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@900&family=Noto+Sans+TC:wght@500;900&display=swap" rel="stylesheet">
@@ -45,61 +45,61 @@
             letter-spacing: 0.8vw; color: white; text-shadow: 0 0 20px rgba(0, 210, 255, 0.8); z-index: 10;
         }
 
-        /* 玻璃面板 */
+        /* 叫號主面板 */
         .display-panel {
             text-align: center; background: var(--glass); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
             width: 70%; max-width: 850px; padding: 50px 40px; border-radius: 40px; border: 1px solid var(--glass-border);
-            z-index: 10; box-shadow: 0 25px 50px rgba(0,0,0,0.5); transition: all 0.3s ease;
+            z-index: 10; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
 
         .label { font-size: 1.8vw; color: #cbd5e1; margin-bottom: 15px; letter-spacing: 2px; font-weight: 700; }
-        
         .current-number {
             font-family: 'Montserrat', sans-serif; font-size: 15vw; font-weight: 900;
             color: var(--accent-gold); line-height: 1; text-shadow: 0 0 30px rgba(241, 196, 15, 0.4);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
-        /* 電腦/電視版等候狀態 (固定右下) */
+        /* 等候狀態與發券資訊 */
         .waiting-status {
             position: fixed; bottom: 30px; right: 30px; background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px); padding: 20px 30px; border-radius: 25px;
+            backdrop-filter: blur(15px); padding: 15px 25px; border-radius: 25px;
             border: 1px solid var(--glass-border); color: white; z-index: 100; text-align: center;
         }
-        .stat-label { font-size: 1rem; color: #cbd5e1; margin-bottom: 5px; font-weight: bold; }
-        .waiting-count { font-size: 2.5rem; font-weight: 900; color: var(--brand-cyan); font-family: 'Montserrat'; }
-        .stat-footer { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 10px; padding-top: 10px; font-size: 0.9rem; }
+        .stat-label { font-size: 0.9rem; color: #cbd5e1; margin-bottom: 5px; }
+        .waiting-count { font-size: 2.2rem; font-weight: 900; color: var(--brand-cyan); font-family: 'Montserrat'; }
+        .stat-footer { border-top: 1px solid rgba(255,255,255,0.1); margin-top: 8px; padding-top: 8px; font-size: 0.85rem; }
 
-        /* 輸入框：電視版預設隱藏 */
+        /* 號碼提醒輸入框 - 預設隱藏 (電視版) */
         .traveler-box { display: none !important; }
 
-        /* 手機版適應優化 (小於 1024px) */
+        /* 手機版樣式強制覆蓋 */
         @media screen and (max-width: 1024px) {
-            body { justify-content: flex-start; padding-top: 80px; overflow-y: auto; }
+            body { justify-content: flex-start; padding: 80px 0 50px 0; overflow-y: auto; }
             .system-title { font-size: 8vw; }
             .display-panel { width: 88%; padding: 40px 15px; }
             .current-number { font-size: 32vw; }
             .label { font-size: 5vw; }
 
-            /* 手機版：等候狀態移到面板下方，不擋號碼 */
+            /* 手機版：等候狀態下移 */
             .waiting-status {
-                position: relative; bottom: 0; right: 0; margin: 25px auto; 
-                width: 85%; display: block !important;
+                position: relative; bottom: auto; right: auto; margin: 25px auto; 
+                width: 85%; display: block !important; box-sizing: border-box;
             }
-            .stat-label { font-size: 1.1rem; }
 
-            /* 手機版：才顯示號碼牌輸入框 */
+            /* 手機版：提醒功能輸入框強行顯示 */
             .traveler-box {
-                display: flex !important; flex-direction: column; align-items: center;
-                margin: 0 auto 50px; width: 85%; background: var(--glass);
-                padding: 25px; border-radius: 30px; border: 1px solid var(--glass-border); z-index: 20;
+                display: flex !important; /* 強制開啟顯示 */
+                flex-direction: column; align-items: center;
+                position: relative; margin: 0 auto 30px; 
+                width: 85%; background: var(--glass); backdrop-filter: blur(10px);
+                padding: 25px; border-radius: 30px; border: 1px solid var(--glass-border); 
+                z-index: 20; box-sizing: border-box;
             }
-            .traveler-box span { font-size: 0.9rem; font-weight: bold; color: #fff; margin-bottom: 10px; }
+            .traveler-box span { font-size: 1rem; font-weight: bold; color: #fff; margin-bottom: 15px; }
             .traveler-box input {
-                width: 140px; height: 65px; background: rgba(0,0,0,0.5);
+                width: 150px; height: 70px; background: rgba(0,0,0,0.5);
                 border: 2px solid var(--brand-cyan); color: var(--brand-cyan);
-                font-size: 2.5rem; font-family: 'Montserrat'; font-weight: 900;
-                text-align: center; border-radius: 15px; outline: none;
+                font-size: 3rem; font-family: 'Montserrat'; font-weight: 900;
+                text-align: center; border-radius: 20px; outline: none;
             }
         }
 
@@ -134,10 +134,11 @@
     <div class="traveler-box">
         <span>輸入您的抽獎號碼</span>
         <input type="number" id="myNumInput" placeholder="---" oninput="triggerFeedback()">
-        <div id="saveStatus" style="opacity:0; color:#2ecc71; font-size:0.7rem; margin-top:5px;">✓ 已開啟自動提醒</div>
+        <div id="saveStatus" style="opacity:0; color:#2ecc71; font-size:0.85rem; margin-top:10px;">✓ 已開啟自動提醒</div>
     </div>
 
     <script>
+        // --- Firebase 設定 ---
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -191,35 +192,25 @@
         let isSpeaking = false;
         db.ref('call_data').on('value', snap => {
             const data = snap.val(); if (!data) return;
-            // 背景更換
             if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
-            // 跑馬燈
             if (data.message && data.message.trim() !== "") {
                 document.getElementById('msgText').innerText = data.message + "　　　　　";
                 document.getElementById('infoBar').style.display = "block";
             } else { document.getElementById('infoBar').style.display = "none"; }
             
-            // 叫號變動
             if (data.timestamp > lastTimestamp) {
                 lastTimestamp = data.timestamp;
-                const numEl = document.getElementById('num');
-                numEl.style.transform = "scale(1.1)";
-                setTimeout(() => {
-                    numEl.innerText = data.number.toString().padStart(3, '0');
-                    numEl.style.transform = "scale(1)";
-                }, 150);
+                document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
                 if (data.updateType === 'num') handleVoiceCall(data);
             }
         });
 
-        // 語音呼叫邏輯 (修正中文語句)
         function handleVoiceCall(data) {
             synth.cancel(); isSpeaking = false;
             const isBigScreen = window.innerWidth > 1024;
             const myNum = document.getElementById('myNumInput').value;
             const isMatched = (myNum && parseInt(myNum) === data.number);
             
-            // 只有大螢幕或是號碼匹配的手機才播放語音
             if (!isBigScreen && !isMatched) return;
 
             setTimeout(() => {
@@ -235,7 +226,7 @@
                 
                 const conf = [
                     {k:'zh',t:`請第 ${data.number} 號旅人準備搭乘`,l:'zh-TW'},
-                    {k:'en',t:`Traveler number ${data.number}, please prepare`,l:'en-US'},
+                    {k:'en',t:`Number ${data.number}, please prepare`,l:'en-US'},
                     {k:'jp',t:`${data.number} 番の旅人様、ご準備ください`,l:'ja-JP'}
                 ];
                 
