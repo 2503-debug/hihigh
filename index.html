@@ -2,27 +2,110 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hi&High 飛翔提案所 - 雲端同步看板</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
         :root { --brand-light: #00a8ff; --bg-dark: #0f172a; --accent-gold: #f1c40f; }
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: var(--bg-dark); }
-        body { font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; background-size: cover; background-position: center; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: background 1s ease-in-out; }
         
-        /* 遮罩 */
-        .bg-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); z-index: 1; }
-        
-        /* 跑馬燈樣式：紅色背景、白色大字體 */
-        #infoBar { position: fixed; top: 0; width: 100%; background: #ff0000; color: #ffffff; height: 100px; line-height: 100px; z-index: 100; display: none; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.3); border-bottom: 3px solid #fff; }
-        #marquee { position: absolute; white-space: nowrap; font-size: 4rem; font-weight: 900; animation: scrollText 12s linear infinite; padding-left: 100%; }
-        @keyframes scrollText { from { transform: translateX(0); } to { transform: translateX(-100%); } }
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; background: var(--bg-dark); 
+        }
 
-        /* 主畫面樣式 */
-        .system-title { font-size: 3.5rem; font-weight: bold; margin-bottom: 30px; letter-spacing: 6px; background: linear-gradient(to right, #ffffff, var(--brand-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0, 168, 255, 0.6); z-index: 10; }
-        .display-panel { text-align: center; background: rgba(0, 0, 0, 0.5); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); padding: 60px 140px; border-radius: 50px; border: 3px solid rgba(0, 168, 255, 0.6); position: relative; z-index: 10; }
-        .label { font-size: 3.8rem; margin: 40px 0 10px 0; color: #f8fafc; }
-        .current-number { font-size: 24rem; font-weight: 900; color: var(--accent-gold); line-height: 1; text-shadow: 0 0 40px rgba(241, 196, 15, 0.4); }
+        body { 
+            font-family: 'PingFang TC', 'Microsoft JhengHei', sans-serif; 
+            background-size: cover; 
+            background-position: center; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            transition: background 1s ease-in-out; 
+        }
+        
+        .bg-overlay { 
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: linear-gradient(135deg, rgba(15, 23, 42, 0.7) 0%, rgba(30, 58, 138, 0.4) 100%); 
+            z-index: 1; 
+        }
+        
+        /* 跑馬燈優化：寬度 90% 並置中，防止電視邊緣裁切 */
+        #infoBar { 
+            position: fixed; 
+            top: 3%; 
+            width: 90%; 
+            left: 5%;
+            background: #ff0000; 
+            color: #ffffff; 
+            height: 80px; 
+            line-height: 80px; 
+            z-index: 100; 
+            display: none; 
+            overflow: hidden; 
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5); 
+            border-radius: 15px;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        #marquee { 
+            position: absolute; 
+            white-space: nowrap; 
+            font-size: 3rem; 
+            font-weight: 900; 
+            animation: scrollText 12s linear infinite; 
+            padding-left: 100%; 
+        }
+
+        @keyframes scrollText { 
+            from { transform: translateX(0); } 
+            to { transform: translateX(-100%); } 
+        }
+
+        /* 主畫面樣式：加入最大寬度限制 */
+        .system-title { 
+            font-size: 4vw; 
+            font-weight: bold; 
+            margin-bottom: 20px; 
+            letter-spacing: 0.5vw; 
+            background: linear-gradient(to right, #ffffff, var(--brand-light)); 
+            -webkit-background-clip: text; 
+            -webkit-text-fill-color: transparent; 
+            text-shadow: 0 0 30px rgba(0, 168, 255, 0.6); 
+            z-index: 10; 
+        }
+
+        .display-panel { 
+            text-align: center; 
+            background: rgba(0, 0, 0, 0.6); 
+            backdrop-filter: blur(15px); 
+            -webkit-backdrop-filter: blur(15px); 
+            width: 85%;
+            max-width: 1200px;
+            padding: 4vw 2vw; 
+            border-radius: 40px; 
+            border: 4px solid rgba(0, 168, 255, 0.5); 
+            position: relative; 
+            z-index: 10; 
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        }
+
+        .label { 
+            font-size: 3.5vw; 
+            margin-bottom: 10px; 
+            color: #f8fafc; 
+            font-weight: bold;
+        }
+
+        /* 號碼使用 vw 單位，確保在大電視上自動適配 */
+        .current-number { 
+            font-size: 20vw; 
+            font-weight: 900; 
+            color: var(--accent-gold); 
+            line-height: 0.9; 
+            text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); 
+        }
     </style>
 </head>
 <body id="bgBody">
@@ -30,13 +113,13 @@
     
     <div class="bg-overlay"></div>
     <div class="system-title">Hi&High 飛翔提案所</div>
+    
     <div class="display-panel">
         <div class="label">請旅人準備搭乘</div>
         <div class="current-number" id="num">000</div>
     </div>
 
     <script>
-        // Firebase 設定
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -52,8 +135,8 @@
         const synth = window.speechSynthesis;
         let lastTimestamp = 0;
 
-        // 確保語音清單載入
-        window.speechSynthesis.getVoices();
+        // 初始化語音
+        synth.getVoices();
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = () => speechSynthesis.getVoices();
         }
@@ -63,87 +146,57 @@
             if (!data || data.timestamp === lastTimestamp) return;
             lastTimestamp = data.timestamp;
             
-            // 1. 背景圖同步
-            if (data.bg) {
-                document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
-            }
+            // 背景同步
+            if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
 
-            // 2. 跑馬燈同步
+            // 跑馬燈同步
             const bar = document.getElementById('infoBar');
-            const msgSpan = document.getElementById('msgText');
             if (data.message && data.message.trim() !== "") {
-                msgSpan.innerText = data.message + "　　　　　　　　　　";
+                document.getElementById('msgText').innerText = data.message + "　　　　　";
                 bar.style.display = "block";
             } else {
                 bar.style.display = "none";
             }
 
-            // 3. 號碼同步
+            // 號碼同步
             document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
             
-            // 4. 語音叫號 (僅當 updateType 為 'num' 時)
+            // 語音播報
             if (data.updateType === 'num') {
-                synth.cancel(); // 停止目前所有發聲
-                
+                synth.cancel();
                 setTimeout(() => {
                     const allVoices = synth.getVoices();
                     let queue = [];
+                    const getV = (pref, lang) => allVoices.find(v => v.name === pref) || allVoices.find(v => v.lang.includes(lang));
 
-                    // 強大的語音選取器
-                    const getVoice = (preferName, langCode) => {
-                        return allVoices.find(v => v.name === preferName) || 
-                               allVoices.find(v => v.lang.toLowerCase().includes(langCode.toLowerCase()));
-                    };
-
-                    // 準備三國語言語句
                     if (data.langs.zh.enabled) {
                         const u = new SpeechSynthesisUtterance(`請第 ${data.number} 號旅人準備搭乘`);
-                        u.voice = getVoice(data.langs.zh.voice, 'zh');
-                        u.lang = 'zh-TW';
-                        queue.push(u);
+                        u.voice = getV(data.langs.zh.voice, 'zh'); u.lang = 'zh-TW'; queue.push(u);
                     }
                     if (data.langs.en.enabled) {
                         const u = new SpeechSynthesisUtterance(`Traveler number ${data.number}, please prepare`);
-                        u.voice = getVoice(data.langs.en.voice, 'en');
-                        u.lang = 'en-US';
-                        queue.push(u);
+                        u.voice = getV(data.langs.en.voice, 'en'); u.lang = 'en-US'; queue.push(u);
                     }
                     if (data.langs.jp.enabled) {
                         const u = new SpeechSynthesisUtterance(`${data.number} 番の旅人様、ご準備ください`);
-                        u.voice = getVoice(data.langs.jp.voice, 'ja');
-                        u.lang = 'ja-JP';
-                        queue.push(u);
+                        u.voice = getV(data.langs.jp.voice, 'ja'); u.lang = 'ja-JP'; queue.push(u);
                     }
 
-                    // 執行隊列播放
-                    const playQueue = (idx) => {
+                    const play = (idx) => {
                         if (idx >= queue.length) return;
-                        
-                        // 設定通用屬性
                         queue[idx].volume = data.volume || 1;
                         queue[idx].rate = 0.9;
-                        
-                        // 遞迴播放
-                        queue[idx].onend = () => {
-                            // 處理重複次數邏輯（這裡簡化為播放完單次語言後檢查是否要重複）
-                            playQueue(idx + 1);
-                        };
+                        queue[idx].onend = () => play(idx + 1);
                         synth.speak(queue[idx]);
                     };
-
-                    // 重複次數處理
-                    for (let r = 0; r < (data.repeat || 1); r++) {
-                        playQueue(0);
-                    }
-                }, 100);
+                    for (let r = 0; r < (data.repeat || 1); r++) play(0);
+                }, 150);
             }
         });
 
-        // 重要：瀏覽器解鎖音訊
         document.onclick = () => {
             const unlock = new SpeechSynthesisUtterance("");
             synth.speak(unlock);
-            console.log("Audio Unlocked");
         };
     </script>
 </body>
