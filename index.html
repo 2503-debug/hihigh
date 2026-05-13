@@ -10,9 +10,10 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
     <style>
-        /* --- 全局基礎佈局 --- */
-        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; }
+        /* --- 佈局：確保可捲動 --- */
+        html { height: 100%; }
         body {
+            margin: 0; padding: 0; min-height: 100vh;
             font-family: 'Noto Sans TC', sans-serif;
             background-color: #0f172a;
             background-position: center center;
@@ -20,10 +21,10 @@
             background-size: cover;
             background-attachment: fixed;
             display: flex; flex-direction: column; align-items: center; justify-content: center;
-            overflow-x: hidden; /* 防止左右晃動 */
+            overflow-x: hidden; overflow-y: auto;
         }
 
-        /* 跑馬燈 (絕對置頂) */
+        /* 跑馬燈 */
         #infoBar {
             position: fixed; top: 0; left: 0; width: 100%; height: 60px;
             background: rgba(231, 76, 60, 0.95); backdrop-filter: blur(10px);
@@ -36,7 +37,7 @@
         .system-title { 
             font-size: 3rem; font-weight: 900; color: white; 
             text-shadow: 0 0 20px rgba(0, 210, 255, 0.8); 
-            margin-bottom: 20px; z-index: 10; text-align: center;
+            margin: 30px 0 20px 0; z-index: 10; text-align: center;
         }
         .display-panel {
             text-align: center; background: rgba(255, 255, 255, 0.1); 
@@ -47,7 +48,7 @@
         }
         .current-number { font-family: 'Montserrat', sans-serif; font-size: 18rem; font-weight: 900; color: #f1c40f; line-height: 1; }
 
-        /* 統計資訊區 (電腦版固定在左下角) */
+        /* 統計資訊區 */
         .stat-container {
             position: absolute; bottom: 30px; left: 30px; display: flex; gap: 15px; z-index: 100;
         }
@@ -58,7 +59,7 @@
         .stat-label { font-size: 0.9rem; margin-right: 10px; opacity: 0.8; }
         .stat-value { font-size: 2rem; font-weight: 900; color: #00d2ff; font-family: 'Montserrat'; }
 
-        /* 啟動按鈕 (右下角固定) */
+        /* 啟動按鈕 */
         #audioBtn {
             position: fixed; bottom: 30px; right: 30px; z-index: 1001;
             background: #27ae60; color: white; border: none; padding: 15px 30px;
@@ -75,22 +76,19 @@
         @keyframes flashEffect { from { background: #dc2626; } to { background: #000; } }
         #matchModal .modal-num { font-size: 35vw; font-family: 'Montserrat'; font-weight: 900; color: #f1c40f; line-height: 1; }
 
-        /* --- 手機版適配修正 --- */
+        #inputStatusText { color: #f1c40f; font-weight: bold; margin-top: 10px; font-size: 1.1rem; min-height: 1.5rem; text-align: center; }
+
         @media screen and (max-width: 1024px) {
-            body { justify-content: flex-start; padding-top: 80px; overflow-y: auto; }
-            .system-title { font-size: 2rem; margin-top: 10px; margin-bottom: 10px; }
+            body { justify-content: flex-start; padding-top: 80px; }
+            .system-title { font-size: 2.2rem; }
             .display-panel { width: 90%; padding: 30px 10px; border-radius: 30px; }
             .current-number { font-size: 30vw; }
-            .traveler-input-box { display: flex !important; flex-direction: column; align-items: center; margin: 20px 0; z-index: 20; }
-            .num-in { width: 140px; height: 70px; background: rgba(0,0,0,0.5); border: 2px solid #00d2ff; color: #00d2ff; font-size: 2.5rem; text-align: center; border-radius: 20px; font-family: 'Montserrat'; }
-            
-            /* 修正統計區手機版擋住問題 */
-            .stat-container { position: relative; bottom: 0; left: 0; margin-top: 10px; margin-bottom: 100px; width: 90%; justify-content: center; gap: 10px; flex-wrap: wrap; }
+            .traveler-input-box { display: flex !important; flex-direction: column; align-items: center; margin: 25px 0; z-index: 20; }
+            .num-in { width: 150px; height: 80px; background: rgba(0,0,0,0.6); border: 3px solid #00d2ff; color: #00d2ff; font-size: 3rem; text-align: center; border-radius: 20px; font-family: 'Montserrat'; outline: none; }
+            .stat-container { position: relative; bottom: 0; left: 0; margin: 20px 0 120px 0; width: 90%; justify-content: center; gap: 10px; flex-wrap: wrap; }
             .stat-pill { padding: 10px 15px; }
             .stat-value { font-size: 1.5rem; }
-            
-            /* 確保啟動語音按鈕在手機版依然固定在螢幕上，不隨滑動消失 */
-            #audioBtn { position: fixed; bottom: 20px; right: 20px; }
+            #audioBtn { position: fixed; bottom: 25px; right: 25px; }
         }
     </style>
 </head>
@@ -112,8 +110,9 @@
     </div>
 
     <div class="traveler-input-box" style="display:none;">
-        <p style="color:#fff; font-weight:bold; margin-bottom:10px;">輸入號碼以啟動強力提醒</p>
+        <p style="color:#fff; font-weight:bold; margin-bottom:10px;">輸入您的號碼啟動提醒</p>
         <input type="number" id="myNum" class="num-in" placeholder="---" oninput="saveNum()">
+        <div id="inputStatusText"></div>
     </div>
 
     <div class="stat-container">
@@ -149,18 +148,23 @@
         }
 
         function saveNum() {
-            localStorage.setItem('hihigh_num', document.getElementById('myNum').value);
+            const val = document.getElementById('myNum').value;
+            localStorage.setItem('hihigh_num', val);
+            const statusDiv = document.getElementById('inputStatusText');
+            if(val !== "") {
+                statusDiv.innerText = `✅ 已鎖定第 ${val} 號，號碼到時將強力提醒`;
+            } else {
+                statusDiv.innerText = "";
+            }
             updateStatus();
         }
 
-        // 核心修正：僅限手機版且輸入號碼才計入在線
         function updateStatus() {
             const val = document.getElementById('myNum').value;
             const isMobile = window.innerWidth <= 1024;
             if (isMobile && val !== "") {
                 db.ref('traveler_stats/' + myId).set({ role: 'mobile', ts: Date.now() });
             } else {
-                // 如果是看板端或清空號碼，則移除該在線記錄
                 db.ref('traveler_stats/' + myId).remove();
             }
         }
@@ -175,7 +179,9 @@
         });
 
         window.onload = () => {
-            document.getElementById('myNum').value = localStorage.getItem('hihigh_num') || "";
+            const saved = localStorage.getItem('hihigh_num') || "";
+            document.getElementById('myNum').value = saved;
+            if(saved !== "") document.getElementById('inputStatusText').innerText = `✅ 已鎖定第 ${saved} 號，號碼到時將強力提醒`;
             updateStatus();
         };
 
@@ -195,12 +201,16 @@
                 document.getElementById('num').innerText = n.toString().padStart(3, '0');
                 
                 const my = parseInt(document.getElementById('myNum').value);
+                
+                // 1. 強力提醒判定 (彈窗與震動)
                 if (!isNaN(my) && my === n) {
                     document.getElementById('modalShow').innerText = n.toString().padStart(3, '0');
                     document.getElementById('matchModal').style.display = 'flex';
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
                 }
                 
+                // 2. 語音廣播邏輯修正：
+                // 如果是「電腦看板」或是「號碼匹配的手機旅人」，才發出聲音
                 if (window.innerWidth > 1024 || (!isNaN(my) && my === n)) {
                     broadcast(data);
                 }
