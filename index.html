@@ -116,11 +116,13 @@
         function loadVoices() {
             voices = synth.getVoices();
         }
+        loadVoices();
         if (speechSynthesis.onvoiceschanged !== undefined) {
             speechSynthesis.onvoiceschanged = loadVoices;
         }
 
         function initAudio() {
+            synth.cancel();
             const u = new SpeechSynthesisUtterance("語音系統啟動");
             u.lang = 'zh-TW';
             synth.speak(u);
@@ -129,7 +131,7 @@
 
         function closeModal() {
             document.getElementById('matchModal').style.display = 'none';
-            synth.cancel(); // 關閉彈窗時也停止語音
+            synth.cancel();
         }
 
         function saveNum() {
@@ -183,10 +185,8 @@
                 const n = parseInt(data.number);
                 document.getElementById('num').innerText = n.toString().padStart(3, '0');
                 const my = parseInt(document.getElementById('myNum').value);
-                
                 const isMatch = !isNaN(my) && my === n;
                 
-                // --- 關鍵修正：切換新號碼時立即中斷舊語音 ---
                 synth.cancel();
 
                 if (isMatch) {
@@ -194,7 +194,6 @@
                     document.getElementById('matchModal').style.display = 'flex';
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
                 } else {
-                    // 如果不是匹配號碼，確保關閉之前的提醒視窗（防止管理員快速跳號時手機卡在舊視窗）
                     document.getElementById('matchModal').style.display = 'none';
                 }
                 
@@ -207,7 +206,7 @@
         function broadcast(data, isMatch) {
             const num = data.number;
             
-            // 號碼匹配的手機端專用提醒
+            // 開場白修正為「已輪到您的號碼」
             if (isMatch && window.innerWidth <= 1024) {
                 const welcome = new SpeechSynthesisUtterance("已輪到您的號碼。");
                 welcome.lang = 'zh-TW';
@@ -216,12 +215,13 @@
             }
 
             const config = [
-                { k: 'zh', text: `請第 ${num} 號旅人準備搭乘`, lang: 'zh-TW' },
-                { k: 'en', text: `Traveler number ${num}, please prepare to board.`, lang: 'en-US' },
-                { k: 'jp', text: `旅人番号 ${num} 番、搭乗の準備をしてください。`, lang: 'ja-JP' }
+                { k: 'zh', text: `請第 ${num} 號旅人準備搭乘`, lang: 'zh-TW', search: ['Yating', 'Hui-Hui', 'Taiwan', 'Chinese'] },
+                { k: 'en', text: `Traveler number ${num}, please prepare to board.`, lang: 'en-US', search: ['Google US English', 'Samantha', 'English United States', 'Zira'] },
+                { k: 'jp', text: `旅人番号 ${num} 番、搭乗の準備をしてください。`, lang: 'ja-JP', search: ['Google 日本語', 'Kyoko', 'Japanese Japan', 'Nanako'] }
             ];
 
-            // 稍微延遲讓 synth.cancel() 徹底生效
+            if (voices.length === 0) voices = synth.getVoices();
+
             setTimeout(() => {
                 config.forEach(item => {
                     const setting = data.langs[item.k];
@@ -230,13 +230,22 @@
                             const u = new SpeechSynthesisUtterance(item.text);
                             u.lang = item.lang;
                             u.rate = 0.85;
-                            const matchedVoice = voices.find(v => v.lang.startsWith(item.lang));
-                            if (matchedVoice) u.voice = matchedVoice;
+
+                            let selectedVoice = voices.find(v => 
+                                v.lang.replace('_', '-').includes(item.lang) && 
+                                item.search.some(key => v.name.includes(key))
+                            );
+
+                            if (!selectedVoice) {
+                                selectedVoice = voices.find(v => v.lang.replace('_', '-').includes(item.lang));
+                            }
+
+                            if (selectedVoice) u.voice = selectedVoice;
                             synth.speak(u);
                         }
                     }
                 });
-            }, 100); 
+            }, isMatch ? 1500 : 50); // 稍微縮短延遲
         }
     </script>
 </body>
