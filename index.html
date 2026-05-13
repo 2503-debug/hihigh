@@ -74,45 +74,18 @@
         @keyframes flashEffect { from { background: #dc2626; } to { background: #000; } }
         #matchModal .modal-num { font-size: 35vw; font-family: 'Montserrat'; font-weight: 900; color: #f1c40f; line-height: 1; }
 
-        /* --- 手機版適配修正：防止遮擋 --- */
+        /* --- 手機版適配修正 --- */
         @media screen and (max-width: 1024px) {
-            body { 
-                justify-content: flex-start; /* 改為由上而下排隊 */
-                padding-top: 80px; 
-                overflow-y: auto; /* 內容過多時允許滾動 */
-            }
+            body { justify-content: flex-start; padding-top: 80px; overflow-y: auto; }
             .system-title { font-size: 2rem; margin-top: 10px; margin-bottom: 10px; }
             .display-panel { width: 90%; padding: 30px 10px; border-radius: 30px; }
             .current-number { font-size: 30vw; }
-
-            /* 輸入框區塊：釋放空間 */
-            .traveler-input-box { 
-                display: flex !important; flex-direction: column; align-items: center; 
-                margin: 20px 0; z-index: 20; 
-            }
-            .num-in { 
-                width: 140px; height: 70px; background: rgba(0,0,0,0.5); 
-                border: 2px solid #00d2ff; color: #00d2ff; font-size: 2.5rem; 
-                text-align: center; border-radius: 20px; font-family: 'Montserrat'; 
-            }
-
-            /* 關鍵修正：手機版統計資訊改為流動佈局，不遮擋輸入框 */
-            .stat-container { 
-                position: relative; /* 取消絕對定位 */
-                bottom: 0; left: 0; 
-                margin-top: 10px; margin-bottom: 30px;
-                width: 90%; justify-content: center; gap: 10px;
-                flex-wrap: wrap; /* 空間不足時自動換行 */
-            }
+            .traveler-input-box { display: flex !important; flex-direction: column; align-items: center; margin: 20px 0; z-index: 20; }
+            .num-in { width: 140px; height: 70px; background: rgba(0,0,0,0.5); border: 2px solid #00d2ff; color: #00d2ff; font-size: 2.5rem; text-align: center; border-radius: 20px; font-family: 'Montserrat'; }
+            .stat-container { position: relative; bottom: 0; left: 0; margin-top: 10px; margin-bottom: 30px; width: 90%; justify-content: center; gap: 10px; flex-wrap: wrap; }
             .stat-pill { padding: 10px 15px; }
             .stat-value { font-size: 1.5rem; }
-
-            /* 語音按鈕改為相對位置，排在最後面 */
-            #audioBtn { 
-                position: relative; 
-                bottom: 0; right: 0; 
-                margin-top: 10px; margin-bottom: 20px; 
-            }
+            #audioBtn { position: relative; bottom: 0; right: 0; margin-top: 10px; margin-bottom: 20px; }
         }
     </style>
 </head>
@@ -224,13 +197,21 @@
         });
 
         function broadcast(data) {
+            // 恢復原始延遲與內容設定
             setTimeout(() => {
-                const confs = [{k:'zh', t:`請第 ${data.number} 號準備`, l:'zh-TW'}, {k:'en', t:`Number ${data.number}`, l:'en-US'}, {k:'jp', t:`${data.number} 番`, l:'ja-JP'}];
+                const confs = [
+                    {k:'zh', t:`請第 ${data.number} 號旅人準備搭乘`, l:'zh-TW'}, 
+                    {k:'en', t:`Number ${data.number}`, l:'en-US'}, 
+                    {k:'jp', t:`${data.number} 番`, l:'ja-JP'}
+                ];
                 confs.forEach(c => {
                     const s = data.langs[c.k];
                     if(s && s.enabled) {
                         for(let i=0; i<s.repeat; i++) {
-                            const u = new SpeechSynthesisUtterance(c.t); u.lang = c.l; synth.speak(u);
+                            const u = new SpeechSynthesisUtterance(c.t); 
+                            u.lang = c.l; 
+                            u.rate = 0.9; // 稍微放慢一點更專業
+                            synth.speak(u);
                         }
                     }
                 });
