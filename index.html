@@ -37,66 +37,52 @@
             --glass-border: rgba(255, 255, 255, 0.2);
         }
 
-        /* 讓內容延伸至 iOS 瀏海區域 */
-        html, body { 
-            margin: 0; padding: 0; width: 100%; height: 100%; 
-            overflow-x: hidden; 
-            background: #000; 
-            position: relative;
+        /* 強力蓋版彈窗樣式 */
+        #matchModal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 0, 0, 0.95);
+            z-index: 9999; display: none; flex-direction: column;
+            align-items: center; justify-content: center; color: white;
+            text-align: center; animation: modalFlash 0.5s infinite alternate;
+            padding: 20px; box-sizing: border-box;
+        }
+        @keyframes modalFlash {
+            from { background: rgba(220, 38, 38, 0.98); }
+            to { background: rgba(0, 0, 0, 0.98); }
+        }
+        #matchModal h1 { font-size: 10vw; margin: 0; font-weight: 900; letter-spacing: 2px; }
+        #matchModal p { font-size: 5vw; margin: 10px 0; opacity: 0.9; }
+        #matchModal .modal-num { font-size: 35vw; font-family: 'Montserrat'; font-weight: 900; color: var(--accent-gold); line-height: 1; text-shadow: 0 0 50px rgba(241, 196, 15, 0.5); }
+        #matchModal .close-btn {
+            background: white; color: black; padding: 18px 60px;
+            border-radius: 100px; font-weight: 900; font-size: 6vw;
+            border: none; margin-top: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.5);
+            cursor: pointer; -webkit-tap-highlight-color: transparent;
         }
 
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow-x: hidden; background: #000; position: relative; }
         body {
             font-family: 'Noto Sans TC', sans-serif;
             background-image: linear-gradient(-45deg, #0f172a, #1e3a8a, #0f172a, #1e40af);
-            background-size: 400% 400%;
-            animation: gradientBG 15s ease infinite;
-            background-repeat: no-repeat;
-            background-position: center center;
-            background-size: cover;
-            background-attachment: fixed;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh;
-            /* 修正 iOS 工具列高度問題 */
-            min-height: -webkit-fill-available;
+            background-size: 400% 400%; animation: gradientBG 15s ease infinite;
+            display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh;
         }
-
         @keyframes gradientBG { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-
-        .bg-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.4); 
-            z-index: 1; pointer-events: none; 
-        }
 
         #infoBar {
             position: fixed; top: env(safe-area-inset-top, 15px); width: 94%; left: 3%;
             background: rgba(231, 76, 60, 0.95); backdrop-filter: blur(10px);
-            color: white; height: 70px; line-height: 70px; 
-            z-index: 100; display: none; overflow: hidden; border-radius: 50px;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.4);
+            color: white; height: 70px; line-height: 70px; z-index: 100; display: none; overflow: hidden; border-radius: 50px;
         }
+        #marquee { position: absolute; white-space: nowrap; font-size: 2.2rem; font-weight: 900; animation: scrollText 20s linear infinite; }
 
-        #marquee { 
-            position: absolute; white-space: nowrap; font-size: 2.2rem; 
-            font-weight: 900; letter-spacing: 2px;
-            animation: scrollText 20s linear infinite; 
-        }
-
-        .system-title {
-            font-size: 2.8vw; font-weight: 900; margin-bottom: 20px;
-            letter-spacing: 0.8vw; color: white; text-shadow: 0 0 20px rgba(0, 210, 255, 0.8); z-index: 10;
-        }
-
+        .system-title { font-size: 2.8vw; font-weight: 900; margin-bottom: 20px; color: white; text-shadow: 0 0 20px rgba(0, 210, 255, 0.8); z-index: 10; }
         .display-panel {
             text-align: center; background: var(--glass); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
             width: 70%; max-width: 850px; padding: 50px 40px; border-radius: 40px; border: 1px solid var(--glass-border);
             z-index: 10; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
         }
-
-        .current-number {
-            font-family: 'Montserrat', sans-serif; font-size: 15vw; font-weight: 900;
-            color: var(--accent-gold); line-height: 1; text-shadow: 0 0 30px rgba(241, 196, 15, 0.4);
-        }
+        .current-number { font-family: 'Montserrat', sans-serif; font-size: 15vw; font-weight: 900; color: var(--accent-gold); line-height: 1; }
 
         .waiting-status {
             position: fixed; bottom: env(safe-area-inset-bottom, 30px); right: 30px; 
@@ -104,43 +90,37 @@
             border-radius: 25px; border: 1px solid var(--glass-border); color: white; z-index: 100;
         }
 
-        .traveler-box { display: none !important; }
-
         @media screen and (max-width: 1024px) {
             body { justify-content: flex-start; padding-top: 100px; }
             .system-title { font-size: 8vw; }
             .display-panel { width: 88%; padding: 40px 15px; }
             .current-number { font-size: 32vw; }
-            .waiting-status {
-                position: relative; bottom: auto; right: auto; margin: 25px auto; 
-                width: 85%; box-sizing: border-box; text-align: center;
-            }
             .traveler-box {
                 display: flex !important; flex-direction: column; align-items: center;
                 width: 85%; background: var(--glass); padding: 25px; border-radius: 30px;
-                border: 1px solid var(--glass-border); margin: 0 auto 30px; z-index: 20;
+                border: 1px solid var(--glass-border); margin: 30px auto; z-index: 20;
             }
             .traveler-box input {
-                width: 150px; height: 70px; background: rgba(0,0,0,0.5);
-                border: 2px solid var(--brand-cyan); color: var(--brand-cyan);
-                font-size: 3rem; font-family: 'Montserrat'; font-weight: 900;
+                width: 150px; height: 70px; background: rgba(0,0,0,0.5); border: 2px solid var(--brand-cyan);
+                color: var(--brand-cyan); font-size: 3rem; font-family: 'Montserrat'; font-weight: 900;
                 text-align: center; border-radius: 20px; outline: none; margin-top: 15px;
             }
         }
-
         @keyframes scrollText { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
-        .num-update { animation: numPop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
-        @keyframes numPop { 0% { transform: scale(0.9); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
-        .matched-alert { animation: pulseMatched 1s infinite alternate; border-color: #ff4757 !important; }
-        @keyframes pulseMatched { from { box-shadow: 0 0 20px rgba(255, 71, 87, 0.4); } to { box-shadow: 0 0 50px rgba(255, 71, 87, 0.8); transform: scale(1.02); } }
     </style>
 </head>
 <body id="bgBody">
 
-    <button id="audioUnlockBtn" onclick="unlockAudio()" style="position:fixed; bottom:20px; left:20px; z-index:9999; background:#27ae60; color:white; border:none; padding:10px 20px; border-radius:50px; font-weight:900; box-shadow: 0 4px 10px rgba(0,0,0,0.3);">🔊 啟動語音系統</button>
+    <div id="matchModal">
+        <h1>您的號碼到了！</h1>
+        <p>請前往櫃台搭乘</p>
+        <div class="modal-num" id="modalNumShow">000</div>
+        <button class="close-btn" onclick="closeMatchModal()">我知道了</button>
+    </div>
+
+    <button id="audioUnlockBtn" onclick="unlockAudio()" style="position:fixed; bottom:20px; left:20px; z-index:9999; background:#27ae60; color:white; border:none; padding:15px 25px; border-radius:50px; font-weight:900; box-shadow: 0 4px 15px rgba(0,0,0,0.4);">🔊 啟動叫號語音系統</button>
 
     <div id="infoBar"><div id="marquee"><span id="msgText"></span></div></div>
-    <div class="bg-overlay"></div>
     
     <div class="system-title">Hi&High 飛翔提案所</div>
     
@@ -150,22 +130,18 @@
         <div style="margin-top:15px; font-size:1.2vw; color:var(--brand-cyan); font-weight:500;">請旅人準備搭乘</div>
     </div>
 
-    <div class="waiting-status">
-        <div style="font-size:0.9rem; color:#cbd5e1;">目前等候中 (手機)</div>
-        <span id="uiWaitingCount" style="font-size:2.2rem; font-weight:900; color:var(--brand-cyan); font-family: 'Montserrat';">0</span>
-        <div style="border-top:1px solid rgba(255,255,255,0.1); margin-top:8px; padding-top:8px; font-size:0.85rem;">
-            已發放號碼：<span id="uiTotalIssued" style="color:var(--accent-gold); font-weight:bold;">0</span>
-        </div>
-    </div>
-
-    <div class="traveler-box">
-        <span style="color:#fff; font-weight:bold;">輸入您的抽取號碼</span>
+    <div class="traveler-box" style="display:none;">
+        <span style="color:#fff; font-weight:bold;">輸入您的抽獎號碼</span>
         <input type="number" id="myNumInput" placeholder="---" oninput="triggerFeedback()">
         <div id="saveStatus" style="opacity:0; color:#2ecc71; font-size:0.85rem; margin-top:10px;">✓ 已開啟自動提醒</div>
     </div>
 
+    <div class="waiting-status">
+        <div style="font-size:0.9rem; color:#cbd5e1;">目前在線 (手機)</div>
+        <span id="uiWaitingCount" style="font-size:2.2rem; font-weight:900; color:var(--brand-cyan); font-family: 'Montserrat';">0</span>
+    </div>
+
     <script>
-        // Firebase 配置 (請更換為您的配置)
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -173,8 +149,7 @@
             projectId: "hihigh-system",
             storageBucket: "hihigh-system.firebasestorage.app",
             messagingSenderId: "969837475229",
-            appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
-            measurementId: "G-V62MTFXC8N"
+            appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74"
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
@@ -182,28 +157,19 @@
         const myId = Math.random().toString(36).substring(7);
         const travelerRef = db.ref('traveler_stats/' + myId);
 
-        // 更新在線狀態 (僅限手機且有輸入號碼)
-        function updateOnlineStatus() {
-            const isMobile = window.innerWidth <= 1024;
-            const myNum = document.getElementById('myNumInput').value;
-            if (isMobile && myNum !== "") { 
-                travelerRef.set({ isWaiting: true, role: 'mobile', timestamp: firebase.database.ServerValue.TIMESTAMP }); 
-            } else { 
-                travelerRef.remove(); 
+        function closeMatchModal() {
+            document.getElementById('matchModal').style.display = 'none';
+            synth.cancel();
+        }
+
+        function unlockAudio() {
+            const u = new SpeechSynthesisUtterance("系統已就緒"); u.lang = "zh-TW"; 
+            synth.speak(u); 
+            document.getElementById('audioUnlockBtn').style.display = 'none';
+            if ('wakeLock' in navigator) {
+                navigator.wakeLock.request('screen').catch(() => {});
             }
         }
-        travelerRef.onDisconnect().remove();
-
-        // 統計人數監聽
-        db.ref('traveler_stats').on('value', snap => { 
-            const list = snap.val() || {};
-            const mobileCount = Object.values(list).filter(item => item.role === 'mobile').length;
-            document.getElementById('uiWaitingCount').innerText = mobileCount; 
-        });
-
-        db.ref('issue_stats/totalIssued').on('value', snap => { 
-            document.getElementById('uiTotalIssued').innerText = snap.val() || 0; 
-        });
 
         function triggerFeedback() {
             localStorage.setItem('hihigh_num', document.getElementById('myNumInput').value);
@@ -212,14 +178,20 @@
             setTimeout(() => { document.getElementById('saveStatus').style.opacity = "0"; }, 2000);
         }
 
-        function unlockAudio() {
-            const u = new SpeechSynthesisUtterance("系統已就緒"); u.lang = "zh-TW"; 
-            synth.speak(u); document.getElementById('audioUnlockBtn').style.display = 'none';
-            // 啟用螢幕常亮 (PWA 關鍵功能)
-            if ('wakeLock' in navigator) {
-                navigator.wakeLock.request('screen').catch(err => console.log("WakeLock failed"));
-            }
+        function updateOnlineStatus() {
+            const isMobile = window.innerWidth <= 1024;
+            const myNum = document.getElementById('myNumInput').value;
+            if (isMobile && myNum !== "") { 
+                travelerRef.set({ isWaiting: true, role: 'mobile', timestamp: firebase.database.ServerValue.TIMESTAMP }); 
+            } else { travelerRef.remove(); }
         }
+        travelerRef.onDisconnect().remove();
+
+        db.ref('traveler_stats').on('value', snap => { 
+            const list = snap.val() || {};
+            const mobileCount = Object.values(list).filter(item => item.role === 'mobile').length;
+            document.getElementById('uiWaitingCount').innerText = mobileCount; 
+        });
 
         window.onload = () => {
             if(localStorage.getItem('hihigh_num')) document.getElementById('myNumInput').value = localStorage.getItem('hihigh_num');
@@ -227,52 +199,45 @@
         };
 
         let lastTimestamp = 0;
-        let isSpeaking = false;
         db.ref('call_data').on('value', snap => {
             const data = snap.val(); if (!data) return;
-            // 更新背景
-            if (data.bg) {
-                const body = document.getElementById('bgBody');
-                body.style.backgroundImage = `url(${data.bg})`;
-            }
-            // 更新跑馬燈
+            if (data.bg) document.getElementById('bgBody').style.backgroundImage = `url(${data.bg})`;
             if (data.message && data.message.trim() !== "") {
                 document.getElementById('msgText').innerText = data.message + "　　　　　";
                 document.getElementById('infoBar').style.display = "block";
-            } else { 
-                document.getElementById('infoBar').style.display = "none"; 
-            }
-            // 更新叫號
+            } else { document.getElementById('infoBar').style.display = "none"; }
+            
             if (data.timestamp > lastTimestamp) {
                 lastTimestamp = data.timestamp;
-                const numEl = document.getElementById('num');
-                numEl.innerText = data.number.toString().padStart(3, '0');
-                numEl.classList.remove('num-update');
-                void numEl.offsetWidth; 
-                numEl.classList.add('num-update');
-                if (data.updateType === 'num') handleVoiceCall(data);
+                document.getElementById('num').innerText = data.number.toString().padStart(3, '0');
+                handleVoiceCall(data);
             }
         });
 
         function handleVoiceCall(data) {
-            synth.cancel(); isSpeaking = false;
+            synth.cancel();
             const isBigScreen = window.innerWidth > 1024;
             const myNum = document.getElementById('myNumInput').value;
             const isMatched = (myNum && parseInt(myNum) === data.number);
             
+            // 手機版號碼匹配：彈窗 + 震動
+            if (!isBigScreen && isMatched) {
+                document.getElementById('modalNumShow').innerText = data.number.toString().padStart(3, '0');
+                document.getElementById('matchModal').style.display = 'flex';
+                if (navigator.vibrate) {
+                    // 長震動組合
+                    navigator.vibrate([500, 200, 500, 200, 500, 200, 800]);
+                }
+            }
+
             if (!isBigScreen && !isMatched) return;
 
             setTimeout(() => {
-                if (isSpeaking) return; isSpeaking = true;
                 let queue = [];
                 if (isMatched) {
-                    if (navigator.vibrate) navigator.vibrate([500, 200, 500]);
-                    document.getElementById('mainPanel').classList.add('matched-alert');
-                    setTimeout(() => document.getElementById('mainPanel').classList.remove('matched-alert'), 10000);
-                    const m = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘"); m.lang = "zh-TW"; queue.push(m);
+                    const m = new SpeechSynthesisUtterance("旅人您好，您的號碼到了，請準備搭乘");
+                    m.lang = "zh-TW"; m.volume = 1; queue.push(m);
                 }
-
-                // 多國語言處理... (同先前邏輯)
                 const confs = [
                     {k:'zh', t:`請第 ${data.number} 號旅人準備搭乘`, l:'zh-TW'},
                     {k:'en', t:`Number ${data.number}, please prepare`, l:'en-US'},
@@ -286,9 +251,8 @@
                         }
                     }
                 });
-                
                 const play = (i) => { 
-                    if (i >= queue.length) { isSpeaking = false; return; } 
+                    if (i >= queue.length) return; 
                     queue[i].onend = () => setTimeout(() => play(i+1), 400); 
                     synth.speak(queue[i]); 
                 };
