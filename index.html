@@ -129,7 +129,7 @@
 
         function closeModal() {
             document.getElementById('matchModal').style.display = 'none';
-            synth.cancel();
+            synth.cancel(); // 關閉彈窗時也停止語音
         }
 
         function saveNum() {
@@ -186,13 +186,18 @@
                 
                 const isMatch = !isNaN(my) && my === n;
                 
+                // --- 關鍵修正：切換新號碼時立即中斷舊語音 ---
+                synth.cancel();
+
                 if (isMatch) {
                     document.getElementById('modalShow').innerText = n.toString().padStart(3, '0');
                     document.getElementById('matchModal').style.display = 'flex';
                     if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+                } else {
+                    // 如果不是匹配號碼，確保關閉之前的提醒視窗（防止管理員快速跳號時手機卡在舊視窗）
+                    document.getElementById('matchModal').style.display = 'none';
                 }
                 
-                // 只有電腦看板或自己的號碼匹配時才播音
                 if (window.innerWidth > 1024 || isMatch) {
                     broadcast(data, isMatch);
                 }
@@ -202,7 +207,7 @@
         function broadcast(data, isMatch) {
             const num = data.number;
             
-            // 如果是號碼匹配的手機，先播一句提醒
+            // 號碼匹配的手機端專用提醒
             if (isMatch && window.innerWidth <= 1024) {
                 const welcome = new SpeechSynthesisUtterance("已輪到您的號碼。");
                 welcome.lang = 'zh-TW';
@@ -216,6 +221,7 @@
                 { k: 'jp', text: `旅人番号 ${num} 番、搭乗の準備をしてください。`, lang: 'ja-JP' }
             ];
 
+            // 稍微延遲讓 synth.cancel() 徹底生效
             setTimeout(() => {
                 config.forEach(item => {
                     const setting = data.langs[item.k];
@@ -230,7 +236,7 @@
                         }
                     }
                 });
-            }, isMatch ? 2000 : 800); // 如果有提醒字串，延遲久一點點再播正式內容
+            }, 100); 
         }
     </script>
 </body>
