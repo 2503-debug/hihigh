@@ -204,7 +204,7 @@
             
             // 如果是號碼匹配的手機，先播一句提醒
             if (isMatch && window.innerWidth <= 1024) {
-                const welcome = new SpeechSynthesisUtterance("旅人您好，輪到您的號碼了。");
+                const welcome = new SpeechSynthesisUtterance("已輪到您的號碼。");
                 welcome.lang = 'zh-TW';
                 welcome.rate = 0.9;
                 synth.speak(welcome);
