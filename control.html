@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi&High 控制台 - 專業旗艦版</title>
+    <title>Hi&High 控制台 - 完整功能版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -13,10 +13,9 @@
         h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
         
         .number-display { font-size: 4rem; font-weight: bold; text-align: center; color: #f1c40f; background: #2c3e50; padding: 15px; border-radius: 8px; margin: 10px 0; }
-        .input-group { display: flex; gap: 5px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; } /* 允許在極小螢幕換行 */
+        .input-group { display: flex; gap: 5px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
         input[type="number"], input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; min-width: 0; }
         
-        .btn-row { display: flex; gap: 10px; margin-bottom: 10px; }
         button { flex: 1; padding: 12px; font-size: 1rem; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; font-weight: bold; }
         .btn-next { background: #27ae60; color: white; }
         .btn-prev { background: #7f8c8d; color: white; }
@@ -24,22 +23,20 @@
         .btn-auto { background: #e67e22; color: white; width: 100%; }
         .btn-stop { background: #c0392b; color: white; width: 100%; display: none; }
         .btn-reset { background: #e74c3c; color: white; width: 100%; margin-top: 5px; }
-        .btn-clear { background: #95a5a6; color: white; flex: none; width: 80px; }
         .btn-issue { background: #8e44ad; color: white; width: 100%; font-size: 1.1rem; margin-top: 10px; }
-
+        
         .lang-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; background: #f8f9fa; padding: 8px; border-radius: 6px; font-size: 0.85rem; }
-        select { flex: 1; padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; min-width: 0; }
+        select { flex: 1; padding: 5px; border-radius: 4px; border: 1px solid #ccc; font-size: 0.85rem; }
         .rep-in { width: 45px !important; text-align: center; padding: 5px !important; flex: none !important; }
-
-        #logConsole { background: #1e293b; color: #38bdf8; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; height: 150px; overflow-y: auto; margin-top: 10px; line-height: 1.5; }
-        .stat-box { background: #eef2ff; padding: 15px; border-radius: 8px; margin-top: 10px; }
+        
+        #logConsole { background: #1e293b; color: #38bdf8; padding: 10px; border-radius: 8px; font-family: monospace; font-size: 0.8rem; height: 120px; overflow-y: auto; margin-top: 10px; line-height: 1.5; }
+        .stat-box { background: #eef2ff; padding: 15px; border-radius: 8px; margin-top: 10px; border: 1px solid #d0d7de; }
         .label-sm { font-size: 0.85rem; font-weight: bold; margin-bottom: 5px; display: block; color: #444; }
         
-        /* 區間叫號專用樣式 - 修正寬度溢出問題 */
         .auto-box { border: 2px dashed #e67e22; padding: 12px; border-radius: 10px; margin-top: 15px; background: #fffcf9; }
-        .range-input { width: 60px !important; flex: none !important; text-align: center; padding: 8px 5px !important; }
-        .sec-input { width: 45px !important; flex: none !important; text-align: center; padding: 8px 5px !important; }
-        #intervalHint { font-size: 0.75rem; margin-top: 5px; margin-bottom: 10px; line-height: 1.3; }
+        .range-input { width: 60px !important; flex: none !important; text-align: center; }
+        .sec-input { width: 45px !important; flex: none !important; text-align: center; }
+        #intervalHint { font-size: 0.75rem; margin-top: 5px; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -49,13 +46,13 @@
         <h2>🔢 叫號控制系統</h2>
         <div class="number-display" id="currentNum">000</div>
         
-        <span class="label-sm">手動單次設定 (不歸零)</span>
+        <span class="label-sm">手動設定號碼</span>
         <div class="input-group">
             <input type="number" id="manualNum" placeholder="號碼">
             <button class="btn-set" onclick="setManualNum()">設定</button>
         </div>
-
-        <div class="btn-row">
+        
+        <div class="btn-row" style="display:flex; gap:10px; margin-bottom:10px;">
             <button class="btn-prev" onclick="changeNum(-1)">前一號</button>
             <button class="btn-next" onclick="changeNum(1)">下一號</button>
         </div>
@@ -67,24 +64,23 @@
                 <span>-</span>
                 <input type="number" id="rangeEnd" class="range-input" placeholder="迄">
                 <span style="margin-left:5px">間隔</span>
-                <input type="number" id="rangeSec" class="sec-input" value="10" oninput="validateInterval()">
-                <span>秒</span>
+                <input type="number" id="rangeSec" class="sec-input" value="10" oninput="validateInterval()">秒
             </div>
             <div id="intervalHint">計算建議中...</div>
             <button id="btnStartAuto" class="btn-auto" onclick="startAutoCall()">開始自動任務</button>
             <button id="btnStopAuto" class="btn-stop" onclick="stopAutoCall()">停止任務</button>
         </div>
+        
+        <button class="btn-reset" onclick="resetNum()" style="margin-top:15px;">重設號碼為 0</button>
 
-        <button class="btn-reset" onclick="resetNum()" style="margin-top:15px;">重設為 0</button>
-
-        <h2 style="margin-top: 25px;">🎟️ 發票管理</h2>
+        <h2 style="margin-top: 25px;">🎟️ 抽號統計管理</h2>
         <div class="stat-box">
-            <span class="label-sm">目前已發放至</span>
+            <span class="label-sm">目前已發放至第幾號</span>
             <div class="input-group">
-                <input type="number" id="manualTotal">
+                <input type="number" id="manualTotal" placeholder="輸入總數">
                 <button class="btn-set" onclick="setManualTotal()">更新</button>
             </div>
-            <button class="btn-issue" onclick="issueNewTicket()">＋ 發放下一張票</button>
+            <button class="btn-issue" onclick="issueNewTicket()">＋ 發放下一張票 (加1)</button>
         </div>
     </div>
 
@@ -112,23 +108,26 @@
             <input type="text" id="marqueeMsg" placeholder="跑馬燈公告內容...">
             <button class="btn-clear" onclick="clearMarquee()">清除</button>
         </div>
-        <button class="btn-set" style="width:100%; background: #6366f1;" onclick="saveSettings()">發佈公告</button>
+        <button class="btn-set" style="width:100%; background: #6366f1; margin-bottom:15px;" onclick="saveSettings()">發佈公告內容</button>
 
-        <span class="label-sm" style="margin-top:15px;">背景設定</span>
+        <span class="label-sm">背景設定 (自動壓縮至 400K)</span>
         <div class="input-group">
-            <input type="text" id="bgUrl" placeholder="網址...">
+            <input type="text" id="bgUrl" placeholder="圖片數據..." readonly>
             <button class="btn-clear" onclick="clearBackground()">移除</button>
         </div>
-        <input type="file" id="bgFile" accept="image/*" onchange="uploadBg()" style="font-size:0.8rem;">
+        <input type="file" id="bgFile" accept="image/*" onchange="uploadBg()">
 
-        <h2 style="margin-top: 20px;">📜 操作紀錄 (LOG)</h2>
+        <h2 style="margin-top: 20px;">📜 系統紀錄與狀態</h2>
         <div id="logConsole">系統就緒...</div>
-        <div style="font-size:0.85rem; margin-top:10px;">手機在線人數：<span id="statOnline" style="color:#2563eb; font-weight:bold;">0</span></div>
+        
+        <div class="stat-box" style="background:#f8fafc; margin-top:10px; border: 1px solid #e2e8f0;">
+            <div style="font-size:0.9rem;">手機旅人在線人數：<span id="statOnline" style="color:#2563eb; font-weight:900; font-size:1.2rem;">0</span></div>
+        </div>
     </div>
 </div>
 
 <script>
-    // --- Firebase & 初始化邏輯 ---
+    // --- Firebase 初始化 ---
     const firebaseConfig = {
         apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
         authDomain: "hihigh-system.firebaseapp.com",
@@ -136,8 +135,7 @@
         projectId: "hihigh-system",
         storageBucket: "hihigh-system.firebasestorage.app",
         messagingSenderId: "969837475229",
-        appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74",
-        measurementId: "G-V62MTFXC8N"
+        appId: "1:969837475229:web:a3ed6b20ba2fe9a5602b74"
     };
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
@@ -148,129 +146,115 @@
 
     function addLog(msg) {
         const log = document.getElementById('logConsole');
-        const time = new Date().toLocaleTimeString('zh-TW', {hour12:false});
-        log.innerHTML = `[${time}] ${msg}<br>` + log.innerHTML;
+        log.innerHTML = `[${new Date().toLocaleTimeString()}] ${msg}<br>` + log.innerHTML;
         log.scrollTop = 0;
     }
 
-    function populateVoiceList() {
-        const voices = window.speechSynthesis.getVoices();
-        const config = [
-            { id: 'zh_voice', filter: ['zh', 'yue'] },
-            { id: 'en_voice', filter: ['en'] },
-            { id: 'jp_voice', filter: ['ja', 'jp'] }
-        ];
-        config.forEach(item => {
-            const s = document.getElementById(item.id);
-            const val = s.value;
-            s.innerHTML = '';
-            voices.filter(v => item.filter.some(f => v.lang.toLowerCase().includes(f)))
-                  .forEach(v => {
-                      const opt = document.createElement('option');
-                      opt.textContent = v.name;
-                      opt.value = v.name;
-                      s.appendChild(opt);
-                  });
-            if (val) s.value = val;
-        });
-        calculateSuggestion();
-    }
-    window.speechSynthesis.onvoiceschanged = populateVoiceList;
-
+    // --- 在線人數與發票數據監聽 ---
     db.ref('call_data/number').on('value', snap => {
         currentNumber = snap.val() || 0;
         document.getElementById('currentNum').innerText = currentNumber.toString().padStart(3, '0');
     });
+
     db.ref('issue_stats/totalIssued').on('value', snap => {
         totalIssued = snap.val() || 0;
         document.getElementById('manualTotal').value = totalIssued;
     });
+
     db.ref('traveler_stats').on('value', snap => {
         const list = snap.val() || {};
         const mobileCount = Object.values(list).filter(item => item.role === 'mobile').length;
         document.getElementById('statOnline').innerText = mobileCount;
     });
 
-    function changeNum(step) {
-        currentNumber += step;
-        if (currentNumber < 0) currentNumber = 0;
-        updateDbNum(`調整至 ${currentNumber}`);
+    // --- 發票管理功能 ---
+    function setManualTotal() {
+        totalIssued = parseInt(document.getElementById('manualTotal').value) || 0;
+        db.ref('issue_stats').update({ totalIssued });
+        addLog(`更新發票總額至 ${totalIssued}`);
     }
 
-    function setManualNum() {
-        const val = parseInt(document.getElementById('manualNum').value);
-        if (!isNaN(val)) {
-            currentNumber = val;
-            updateDbNum(`手動設定 ${currentNumber}`);
-        }
+    function issueNewTicket() {
+        totalIssued++;
+        db.ref('issue_stats').update({ totalIssued });
+        addLog(`發出新票，目前累積: ${totalIssued}`);
     }
 
-    function updateDbNum(logMsg) {
+    // --- 圖片壓縮功能 ---
+    function uploadBg() {
+        const file = document.getElementById('bgFile').files[0];
+        if (!file) return;
+        addLog("正在壓縮圖片...");
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const img = new Image();
+            img.onload = function() {
+                const MAX_WIDTH = 1920; 
+                let width = img.width, height = img.height;
+                if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
+                const canvas = document.createElement('canvas');
+                canvas.width = width; canvas.height = height;
+                canvas.getContext('2d').drawImage(img, 0, 0, width, height);
+                const compressed = canvas.toDataURL('image/jpeg', 0.7);
+                document.getElementById('bgUrl').value = compressed;
+                saveSettings();
+                addLog(`✅ 圖片壓縮完成並上傳`);
+            };
+            img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    // --- 叫號控制 ---
+    function updateDbNum(msg) {
         db.ref('call_data').update({ number: currentNumber, timestamp: Date.now(), updateType: 'num' });
-        addLog(logMsg);
+        addLog(msg);
     }
+    
+    function changeNum(s) { currentNumber += s; if(currentNumber<0) currentNumber=0; updateDbNum(`調整至 ${currentNumber}`); }
+    function setManualNum() { const v = parseInt(document.getElementById('manualNum').value); if(!isNaN(v)) { currentNumber=v; updateDbNum(`設定為 ${v}`); }}
+    function resetNum() { if(confirm("確定要重設叫號嗎？")) { currentNumber=0; updateDbNum("!! 系統重設 !!"); }}
 
+    // --- 自動叫號與建議時間 ---
     function startAutoCall() {
         const start = parseInt(document.getElementById('rangeStart').value);
         const end = parseInt(document.getElementById('rangeEnd').value);
         const sec = parseInt(document.getElementById('rangeSec').value) || 10;
-        if (isNaN(start) || isNaN(end) || start > end) { alert("號碼設定錯誤"); return; }
-
+        if (isNaN(start) || isNaN(end) || start > end) return alert("設定錯誤");
         document.getElementById('btnStartAuto').style.display = 'none';
         document.getElementById('btnStopAuto').style.display = 'block';
-        
-        let nextNum = start;
+        let next = start;
         const run = () => {
-            if (nextNum > end) { stopAutoCall(); addLog("✅ 任務完成"); return; }
-            currentNumber = nextNum;
-            updateDbNum(`(自動) 第 ${currentNumber} 號`);
-            nextNum++;
+            if (next > end) { stopAutoCall(); return addLog("任務完成"); }
+            currentNumber = next; updateDbNum(`(自動) 第 ${next} 號`); next++;
         };
-        run();
-        autoCallTimer = setInterval(run, sec * 1000);
+        run(); autoCallTimer = setInterval(run, sec * 1000);
     }
 
-    function stopAutoCall() {
-        if (autoCallTimer) clearInterval(autoCallTimer);
-        autoCallTimer = null;
+    function stopAutoCall() { 
+        if(autoCallTimer) clearInterval(autoCallTimer); 
         document.getElementById('btnStartAuto').style.display = 'block';
         document.getElementById('btnStopAuto').style.display = 'none';
         addLog("🛑 已停止自動任務");
     }
 
     function calculateSuggestion() {
-        let suggest = 0;
-        if (document.getElementById('zh_en').checked) suggest += 4 * (parseInt(document.getElementById('zh_rep').value)||1);
-        if (document.getElementById('en_en').checked) suggest += 4 * (parseInt(document.getElementById('en_rep').value)||1);
-        if (document.getElementById('jp_en').checked) suggest += 4 * (parseInt(document.getElementById('jp_rep').value)||1);
-        window.suggestedMin = suggest || 4;
-        validateInterval();
+        let s = 0;
+        if (document.getElementById('zh_en').checked) s += 4 * (parseInt(document.getElementById('zh_rep').value)||1);
+        if (document.getElementById('en_en').checked) s += 4 * (parseInt(document.getElementById('en_rep').value)||1);
+        if (document.getElementById('jp_en').checked) s += 4 * (parseInt(document.getElementById('jp_rep').value)||1);
+        window.suggestedMin = s || 4; validateInterval();
     }
 
     function validateInterval() {
         const cur = parseInt(document.getElementById('rangeSec').value) || 0;
         const sug = window.suggestedMin || 4;
         const hint = document.getElementById('intervalHint');
-        if (cur < sug) {
-            hint.innerHTML = `⚠️ 建議至少 ${sug} 秒`;
-            hint.style.color = "#e74c3c";
-        } else {
-            hint.innerHTML = `✅ 間隔充足 (建議 ${sug}s)`;
-            hint.style.color = "#27ae60";
-        }
+        hint.innerHTML = cur < sug ? `⚠️ 建議至少 ${sug} 秒` : `✅ 間隔充足 (${sug}s)`;
+        hint.style.color = cur < sug ? "#e74c3c" : "#27ae60";
     }
 
-    function setManualTotal() {
-        totalIssued = parseInt(document.getElementById('manualTotal').value) || 0;
-        db.ref('issue_stats').update({ totalIssued });
-        addLog(`更新發票總額 ${totalIssued}`);
-    }
-    function issueNewTicket() {
-        totalIssued++;
-        db.ref('issue_stats').update({ totalIssued });
-        addLog(`發出新票 ${totalIssued}`);
-    }
-
+    // --- 設定同步 ---
     function saveSettings() {
         const data = {
             bg: document.getElementById('bgUrl').value,
@@ -285,16 +269,20 @@
         calculateSuggestion();
     }
 
+    function populateVoiceList() {
+        const voices = window.speechSynthesis.getVoices();
+        const config = [{id:'zh_voice', f:['zh','yue']},{id:'en_voice', f:['en']},{id:'jp_voice', f:['ja','jp']}];
+        config.forEach(item => {
+            const s = document.getElementById(item.id); s.innerHTML = '';
+            voices.filter(v => item.f.some(f => v.lang.toLowerCase().includes(f))).forEach(v => {
+                const opt = document.createElement('option'); opt.textContent = v.name; opt.value = v.name; s.appendChild(opt);
+            });
+        });
+        calculateSuggestion();
+    }
+    window.speechSynthesis.onvoiceschanged = populateVoiceList;
     function clearMarquee() { document.getElementById('marqueeMsg').value = ''; saveSettings(); }
     function clearBackground() { document.getElementById('bgUrl').value = ''; saveSettings(); }
-    function uploadBg() {
-        const file = document.getElementById('bgFile').files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = e => { document.getElementById('bgUrl').value = e.target.result; saveSettings(); };
-        reader.readAsDataURL(file);
-    }
-    function resetNum() { if(confirm("重設叫號？")) { currentNumber = 0; updateDbNum("!! 重設系統 !!"); } }
 
     window.onload = () => { setTimeout(populateVoiceList, 800); };
 </script>
