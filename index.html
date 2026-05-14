@@ -18,8 +18,7 @@
             --ios-green: #34c759;
             --apple-radius: 30px;
             --marquee-height: 100px; 
-            /* 修正：更換為薰衣草紫 */
-            --ios-purple: rgba(147, 112, 219, 0.95); 
+            --ios-purple: rgba(147, 112, 219, 0.95); /* 薰衣草紫 */
         }
 
         body {
@@ -48,7 +47,7 @@
             display: inline-block;
             padding-bottom: 5px; 
             animation: scrollText 18s linear infinite; 
-            color: #ffffff; /* 確保白色文字在薰衣草紫上清晰 */
+            color: #ffffff;
             text-shadow: 0 2px 4px rgba(0,0,0,0.2);
         }
         @keyframes scrollText { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
@@ -235,6 +234,38 @@
             else db.ref('traveler_stats/' + myId).remove();
         }
         db.ref('traveler_stats/' + myId).onDisconnect().remove();
+
+        // --- [核心：即時語音廣播監聽] ---
+        db.ref('custom_voice').on('value', snap => {
+            const data = snap.val();
+            if (!data || !data.text) return;
+
+            // 安全檢查：只播放 5 秒內發出的指令
+            const now = Date.now();
+            if (now - data.timestamp < 5000) {
+                
+                // 1. 立即中斷目前所有聲音 (包含正在叫號或警報)
+                synth.cancel(); 
+                if (emergencyTimer) stopEmergencyAlert(); 
+
+                // 2. 廣播播放函數
+                const broadcastAction = () => {
+                    const u = new SpeechSynthesisUtterance(data.text);
+                    u.lang = 'zh-TW';
+                    u.rate = 0.95;    // 語速稍微放慢更清晰
+                    u.pitch = 1.0;
+                    u.volume = 1.0;
+                    synth.speak(u);
+                };
+
+                // 3. 執行設定次數
+                const times = data.repeat || 1;
+                for (let i = 0; i < times; i++) {
+                    broadcastAction();
+                }
+                console.log("📢 廣播執行中:", data.text);
+            }
+        });
 
         db.ref('call_data').on('value', snap => {
             const data = snap.val(); if (!data) return;
