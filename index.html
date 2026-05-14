@@ -18,7 +18,7 @@
             --ios-green: #34c759;
             --apple-radius: 30px;
             --marquee-height: 100px; 
-            --ios-purple: rgba(147, 112, 219, 0.95); /* 薰衣草紫 */
+            --ios-purple: rgba(147, 112, 219, 0.95);
         }
 
         body {
@@ -151,7 +151,7 @@
     <div id="matchModal">
         <div style="font-size: 1.8rem; font-weight: 900; margin-bottom: 20px;">到您的號碼了</div>
         <div style="font-size: 25vw; font-weight: 900; color: #fff;" id="modalShow">000</div>
-        <p style="font-size: 1.4rem; font-weight: 700; margin-top: 20px;">請至櫃檯準備購票</p>
+        <p style="font-size: 1.4rem; font-weight: 700; margin-top: 20px;">各位旅人請注意，請至櫃檯購票</p>
         <button onclick="closeModal()" style="background:white; color:black; border:none; padding:15px 50px; border-radius:35px; font-size:1.3rem; font-weight:700; margin-top:30px; cursor:pointer;">關閉提醒</button>
     </div>
 
@@ -164,7 +164,7 @@
         </div>
         <div class="current-number" id="num">000</div>
         <div class="panel-footer">
-            <span class="footer-zh">請至櫃檯準備購票</span>
+            <span class="footer-zh">各位旅人請注意，請至櫃檯購票</span>
             <span class="footer-en">Please Proceed to the Ticket Counter</span>
         </div>
     </div>
@@ -212,7 +212,7 @@
             silentAudio.loop = true; silentAudio.play().catch(()=>{});
             synth.cancel();
             const u = new SpeechSynthesisUtterance("系統已就緒");
-            u.lang = 'zh-TW'; synth.speak(u);
+            u.lang = 'zh-TW'; u.volume = 1.0; synth.speak(u);
             document.getElementById('audioBtn').style.display = 'none';
         }
 
@@ -235,35 +235,18 @@
         }
         db.ref('traveler_stats/' + myId).onDisconnect().remove();
 
-        // --- [核心：即時語音廣播監聽] ---
+        // 監聽自訂廣播
         db.ref('custom_voice').on('value', snap => {
             const data = snap.val();
             if (!data || !data.text) return;
-
-            // 安全檢查：只播放 5 秒內發出的指令
-            const now = Date.now();
-            if (now - data.timestamp < 5000) {
-                
-                // 1. 立即中斷目前所有聲音 (包含正在叫號或警報)
+            if (Date.now() - data.timestamp < 5000) {
                 synth.cancel(); 
                 if (emergencyTimer) stopEmergencyAlert(); 
-
-                // 2. 廣播播放函數
-                const broadcastAction = () => {
-                    const u = new SpeechSynthesisUtterance(data.text);
-                    u.lang = 'zh-TW';
-                    u.rate = 0.95;    // 語速稍微放慢更清晰
-                    u.pitch = 1.0;
-                    u.volume = 1.0;
-                    synth.speak(u);
-                };
-
-                // 3. 執行設定次數
                 const times = data.repeat || 1;
                 for (let i = 0; i < times; i++) {
-                    broadcastAction();
+                    const u = new SpeechSynthesisUtterance(data.text);
+                    u.lang = 'zh-TW'; u.rate = 0.95; u.volume = 1.0; synth.speak(u);
                 }
-                console.log("📢 廣播執行中:", data.text);
             }
         });
 
@@ -334,11 +317,15 @@
                 if (conf && conf.enabled) {
                     for (let i = 0; i < (conf.repeat || 1); i++) {
                         let txt = "";
-                        if(lKey === 'zh') txt = `請號碼 ${voiceNumZh} 的旅人準備購票`;
-                        if(lKey === 'en') txt = `Number ${voiceNumEn}, please proceed to the ticket counter.`;
-                        if(lKey === 'jp') txt = `${voiceNumZh} 番のお客様、チケットカウンターまでお越しください。`;
+                        // 修正 02: 叫號詞變更
+                        if(lKey === 'zh') txt = `各位旅人請注意，請 ${voiceNumZh} 號旅人至櫃檯購票`;
+                        if(lKey === 'en') txt = `Attention travelers, number ${voiceNumEn}, please proceed to the ticket counter.`;
+                        if(lKey === 'jp') txt = `お客様にお知らせいたします、 ${voiceNumZh} 番のお客様、カウンターまでお越しください。`;
+                        
                         const u = new SpeechSynthesisUtterance(txt);
                         u.lang = lKey==='zh'?'zh-TW':(lKey==='en'?'en-US':'ja-JP');
+                        // 修正 01: 音量最大
+                        u.volume = 1.0; 
                         synth.speak(u);
                     }
                 }
@@ -351,8 +338,9 @@
             document.getElementById('matchModal').style.display = 'flex';
             const voiceNum = formatVoiceNum(numStr);
             const alarm = () => {
-                const u = new SpeechSynthesisUtterance(`請旅人 ${voiceNum} 號至櫃台準備購票。`);
-                u.lang = 'zh-TW'; synth.speak(u);
+                // 修正 02: 提醒詞變更 + 修正 01: 音量最大
+                const u = new SpeechSynthesisUtterance(`各位旅人請注意，請 ${voiceNum} 號旅人至櫃台購票。`);
+                u.lang = 'zh-TW'; u.volume = 1.0; synth.speak(u);
                 if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
             };
             alarm();
