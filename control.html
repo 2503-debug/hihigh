@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hi&High 控制台 - 高畫質優化版</title>
+    <title>Hi&High 控制台 - 區間叫號優化版</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
     <style>
@@ -13,7 +13,10 @@
         h2 { margin-top: 0; color: #1e3a8a; border-bottom: 2px solid #f0f2f5; padding-bottom: 10px; font-size: 1.2rem; display: flex; align-items: center; gap: 8px; }
         .number-display { font-size: 4rem; font-weight: bold; text-align: center; color: #f1c40f; background: #2c3e50; padding: 15px; border-radius: 8px; margin: 10px 0; }
         .input-group { display: flex; gap: 5px; margin-bottom: 12px; align-items: center; flex-wrap: wrap; }
+        
+        /* 調整輸入框樣式，使其支援 text 類型 */
         input[type="number"], input[type="text"] { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 0.95rem; min-width: 0; }
+        
         button { flex: 1; padding: 12px; font-size: 1rem; cursor: pointer; border: none; border-radius: 6px; transition: 0.2s; font-weight: bold; }
         .btn-next { background: #27ae60; color: white; }
         .btn-prev { background: #7f8c8d; color: white; }
@@ -31,7 +34,7 @@
         .auto-box { border: 2px dashed #e67e22; padding: 12px; border-radius: 10px; margin-top: 15px; background: #fffcf9; }
         .range-input { width: 60px !important; flex: none !important; text-align: center; }
         .sec-input { width: 45px !important; flex: none !important; text-align: center; }
-        #intervalHint { font-size: 0.75rem; margin-top: 5px; margin-bottom: 10px; }
+        .btn-clear-stats { background: #94a3b8; color: white; font-size: 0.75rem; padding: 4px 10px; border-radius: 4px; flex: none; width: auto; height: 28px; }
     </style>
 </head>
 <body>
@@ -41,9 +44,9 @@
         <h2>🔢 叫號控制系統</h2>
         <div class="number-display" id="currentNum">000</div>
         
-        <span class="label-sm">手動設定號碼</span>
+        <span class="label-sm">手動設定號碼 (可輸入如 005 或 005-010)</span>
         <div class="input-group">
-            <input type="number" id="manualNum" placeholder="號碼">
+            <input type="text" id="manualNum" placeholder="號碼或區間" inputmode="decimal">
             <button class="btn-set" onclick="setManualNum()">設定</button>
         </div>
         
@@ -53,15 +56,14 @@
         </div>
 
         <div class="auto-box">
-            <span class="label-sm" style="color:#e67e22;">⚡ 區間自動叫號</span>
+            <span class="label-sm" style="color:#e67e22;">⚡ 逐號自動叫號 (非區間)</span>
             <div class="input-group" style="gap: 4px;">
                 <input type="number" id="rangeStart" class="range-input" placeholder="起">
                 <span>-</span>
                 <input type="number" id="rangeEnd" class="range-input" placeholder="迄">
                 <span style="margin-left:5px">間隔</span>
-                <input type="number" id="rangeSec" class="sec-input" value="10" oninput="validateInterval()">秒
+                <input type="number" id="rangeSec" class="sec-input" value="10">秒
             </div>
-            <div id="intervalHint">計算建議中...</div>
             <button id="btnStartAuto" class="btn-auto" onclick="startAutoCall()">開始自動任務</button>
             <button id="btnStopAuto" class="btn-stop" onclick="stopAutoCall()">停止任務</button>
         </div>
@@ -101,14 +103,14 @@
 
         <div class="input-group" style="margin-top:15px;">
             <input type="text" id="marqueeMsg" placeholder="跑馬燈公告內容...">
-            <button class="btn-clear" onclick="clearMarquee()">清除</button>
+            <button onclick="clearMarquee()">清除</button>
         </div>
         <button class="btn-set" style="width:100%; background: #6366f1; margin-bottom:15px;" onclick="saveSettings()">發佈公告內容</button>
 
-        <span class="label-sm">背景設定 (高品質 WebP 壓縮模式)</span>
+        <span class="label-sm">背景設定 (高品質 WebP 壓縮)</span>
         <div class="input-group">
             <input type="text" id="bgUrl" placeholder="WebP Data..." readonly>
-            <button class="btn-clear" onclick="clearBackground()">移除</button>
+            <button onclick="clearBackground()">移除</button>
         </div>
         <input type="file" id="bgFile" accept="image/*" onchange="uploadBg()">
 
@@ -116,7 +118,11 @@
         <div id="logConsole">系統就緒...</div>
         
         <div class="stat-box" style="background:#f8fafc; margin-top:10px; border: 1px solid #e2e8f0;">
-            <div style="font-size:0.9rem;">手機旅人在線人數：<span id="statOnline" style="color:#2563eb; font-weight:900; font-size:1.2rem;">0</span></div>
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div style="font-size:0.9rem;">手機旅人在線人數：<span id="statOnline" style="color:#2563eb; font-weight:900; font-size:1.2rem;">0</span></div>
+                <button class="btn-clear-stats" onclick="clearOnlineStats()">強制歸零</button>
+            </div>
+            <div id="deviceDetails" style="font-size: 0.7rem; color: #64748b; margin-top: 8px; font-family: monospace; word-break: break-all; line-height: 1.4;"></div>
         </div>
     </div>
 </div>
@@ -135,7 +141,8 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.database();
     
-    let currentNumber = 0;
+    // 關鍵修改：變數改為存儲字串
+    let currentNumberStr = "0";
     let totalIssued = 0;
     let autoCallTimer = null;
 
@@ -145,10 +152,16 @@
         log.scrollTop = 0;
     }
 
-    // 數據監聽
+    // --- 數據監聽 ---
     db.ref('call_data/number').on('value', snap => {
-        currentNumber = snap.val() || 0;
-        document.getElementById('currentNum').innerText = currentNumber.toString().padStart(3, '0');
+        const val = snap.val();
+        currentNumberStr = val !== null ? val.toString() : "0";
+        // 如果是單號且長度小於 3，補零顯示；如果是區間，直接顯示
+        if (!currentNumberStr.includes('-')) {
+            document.getElementById('currentNum').innerText = currentNumberStr.padStart(3, '0');
+        } else {
+            document.getElementById('currentNum').innerText = currentNumberStr;
+        }
     });
 
     db.ref('issue_stats/totalIssued').on('value', snap => {
@@ -158,11 +171,25 @@
 
     db.ref('traveler_stats').on('value', snap => {
         const list = snap.val() || {};
-        const mobileCount = Object.values(list).filter(item => item.role === 'mobile').length;
+        const ids = Object.keys(list);
+        const mobileCount = ids.filter(id => list[id].role === 'mobile').length;
         document.getElementById('statOnline').innerText = mobileCount;
+        const detailDiv = document.getElementById('deviceDetails');
+        if (mobileCount > 0) {
+            const details = ids.map(id => {
+                const time = list[id].ts ? new Date(list[id].ts).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '未知';
+                return `[${id.substring(0, 5)} @ ${time}]`;
+            }).join(' ');
+            detailDiv.innerText = "裝置明細: " + details;
+        } else { detailDiv.innerText = "目前無在線裝置"; }
     });
 
-    // 統計管理
+    function clearOnlineStats() {
+        if (confirm("確定清除所有統計嗎？")) {
+            db.ref('traveler_stats').remove().then(() => addLog("🧹 資料庫已歸零"));
+        }
+    }
+
     function setManualTotal() {
         totalIssued = parseInt(document.getElementById('manualTotal').value) || 0;
         db.ref('issue_stats').update({ totalIssued });
@@ -172,57 +199,64 @@
     function issueNewTicket() {
         totalIssued++;
         db.ref('issue_stats').update({ totalIssued });
-        addLog(`發出新票，目前累積: ${totalIssued}`);
+        addLog(`發出新票: ${totalIssued}`);
     }
 
-    // --- WebP 高品質壓縮優化 ---
+    // --- 背景處理 ---
     function uploadBg() {
         const file = document.getElementById('bgFile').files[0];
         if (!file) return;
-        addLog("正在進行高品質 WebP 壓縮處理...");
+        addLog("處理高品質 WebP...");
         const reader = new FileReader();
         reader.onload = function(e) {
             const img = new Image();
             img.onload = function() {
-                // 1. 提升解析度上限至 1920 (Full HD)
                 const MAX_WIDTH = 1920; 
                 let width = img.width, height = img.height;
-                if (width > MAX_WIDTH) { 
-                    height = Math.round((height * MAX_WIDTH) / width); 
-                    width = MAX_WIDTH; 
-                }
-                
+                if (width > MAX_WIDTH) { height = Math.round((height * MAX_WIDTH) / width); width = MAX_WIDTH; }
                 const canvas = document.createElement('canvas');
                 canvas.width = width; canvas.height = height;
                 const ctx = canvas.getContext('2d');
-                
-                // 2. 開啟高品質影像平滑處理
-                ctx.imageSmoothingEnabled = true;
                 ctx.imageSmoothingQuality = 'high';
-                
                 ctx.drawImage(img, 0, 0, width, height);
-                
-                // 3. 調高品質參數至 0.85 (大幅減少色塊，維持高清晰度)
                 const compressed = canvas.toDataURL('image/webp', 0.85);
-                const sizeKB = Math.round((compressed.length * 0.75) / 1024);
-                
                 document.getElementById('bgUrl').value = compressed;
                 saveSettings();
-                addLog(`✨ WebP 處理完成: ${width}x${height} | 大小: 約 ${sizeKB}KB (畫質已顯著提升)`);
+                addLog(`✨ WebP 大小: 約 ${Math.round((compressed.length * 0.75) / 1024)}KB`);
             };
             img.src = e.target.result;
         };
         reader.readAsDataURL(file);
     }
 
-    // 叫號與設定
+    // --- 關鍵：叫號邏輯優化 ---
     function updateDbNum(msg) {
-        db.ref('call_data').update({ number: currentNumber, timestamp: Date.now(), updateType: 'num' });
+        // 傳送給 Firebase 時維持字串格式
+        db.ref('call_data').update({ number: currentNumberStr, timestamp: Date.now(), updateType: 'num' });
         addLog(msg);
     }
-    function changeNum(s) { currentNumber += s; if(currentNumber<0) currentNumber=0; updateDbNum(`調整至 ${currentNumber}`); }
-    function setManualNum() { const v = parseInt(document.getElementById('manualNum').value); if(!isNaN(v)) { currentNumber=v; updateDbNum(`設定為 ${v}`); }}
-    function resetNum() { if(confirm("確定重設叫號？")) { currentNumber=0; updateDbNum("!! 系統重設 !!"); }}
+
+    function changeNum(s) { 
+        // 只有在非區間模式下才能增減號碼
+        if (currentNumberStr.includes('-')) {
+            alert("目前為區間模式，請先手動設定單一號碼");
+            return;
+        }
+        let n = parseInt(currentNumberStr) + s; 
+        if(n < 0) n = 0; 
+        currentNumberStr = n.toString();
+        updateDbNum(`調整至 ${currentNumberStr}`); 
+    }
+
+    function setManualNum() { 
+        const v = document.getElementById('manualNum').value.trim(); 
+        if(v !== "") { 
+            currentNumberStr = v; // 直接接收字串，支援 "005-010"
+            updateDbNum(`設定為 ${v}`); 
+        }
+    }
+
+    function resetNum() { if(confirm("確定重設叫號？")) { currentNumberStr = "0"; updateDbNum("!! 系統重設 !!"); }}
 
     function startAutoCall() {
         const start = parseInt(document.getElementById('rangeStart').value);
@@ -234,7 +268,9 @@
         let next = start;
         const run = () => {
             if (next > end) { stopAutoCall(); return addLog("任務完成"); }
-            currentNumber = next; updateDbNum(`(自動) 第 ${next} 號`); next++;
+            currentNumberStr = next.toString(); 
+            updateDbNum(`(自動) 第 ${next} 號`); 
+            next++;
         };
         run(); autoCallTimer = setInterval(run, sec * 1000);
     }
