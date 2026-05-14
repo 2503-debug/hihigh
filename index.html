@@ -191,6 +191,7 @@
     <button id="audioBtn" onclick="initAudio()">🔊 啟動語音提醒</button>
 
     <script>
+        // Firebase 配置
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
@@ -235,7 +236,7 @@
         }
         db.ref('traveler_stats/' + myId).onDisconnect().remove();
 
-        // 監聽自訂廣播
+        // 監聽自訂廣播 (強化穿透力)
         db.ref('custom_voice').on('value', snap => {
             const data = snap.val();
             if (!data || !data.text) return;
@@ -245,7 +246,11 @@
                 const times = data.repeat || 1;
                 for (let i = 0; i < times; i++) {
                     const u = new SpeechSynthesisUtterance(data.text);
-                    u.lang = 'zh-TW'; u.rate = 0.95; u.volume = 1.0; synth.speak(u);
+                    u.lang = 'zh-TW'; 
+                    u.volume = 1.0; // 最大音量
+                    u.pitch = 1.2;  // 強化穿透力
+                    u.rate = 0.9;   // 字句清晰
+                    synth.speak(u);
                 }
             }
         });
@@ -317,15 +322,21 @@
                 if (conf && conf.enabled) {
                     for (let i = 0; i < (conf.repeat || 1); i++) {
                         let txt = "";
-                        // 修正 02: 叫號詞變更
                         if(lKey === 'zh') txt = `各位旅人請注意，請 ${voiceNumZh} 號旅人至櫃檯購票`;
                         if(lKey === 'en') txt = `Attention travelers, number ${voiceNumEn}, please proceed to the ticket counter.`;
                         if(lKey === 'jp') txt = `お客様にお知らせいたします、 ${voiceNumZh} 番のお客様、カウンターまでお越しください。`;
                         
                         const u = new SpeechSynthesisUtterance(txt);
-                        u.lang = lKey==='zh'?'zh-TW':(lKey==='en'?'en-US':'ja-JP');
-                        // 修正 01: 音量最大
-                        u.volume = 1.0; 
+                        if (lKey === 'zh') {
+                            u.lang = 'zh-TW';
+                            u.volume = 1.0;
+                            u.pitch = 1.2; // 強化穿透力
+                            u.rate = 0.85; // 稍慢更威嚴
+                        } else if (lKey === 'en') {
+                            u.lang = 'en-US'; u.volume = 0.8;
+                        } else {
+                            u.lang = 'ja-JP'; u.volume = 0.8;
+                        }
                         synth.speak(u);
                     }
                 }
@@ -338,9 +349,8 @@
             document.getElementById('matchModal').style.display = 'flex';
             const voiceNum = formatVoiceNum(numStr);
             const alarm = () => {
-                // 修正 02: 提醒詞變更 + 修正 01: 音量最大
                 const u = new SpeechSynthesisUtterance(`各位旅人請注意，請 ${voiceNum} 號旅人至櫃台購票。`);
-                u.lang = 'zh-TW'; u.volume = 1.0; synth.speak(u);
+                u.lang = 'zh-TW'; u.volume = 1.0; u.pitch = 1.2; synth.speak(u);
                 if (navigator.vibrate) navigator.vibrate([1000, 500, 1000]);
             };
             alarm();
