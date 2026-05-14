@@ -17,7 +17,9 @@
             --ios-yellow: #ffcc00;
             --ios-green: #34c759;
             --apple-radius: 30px;
-            --marquee-height: 80px;
+            --marquee-height: 100px; 
+            /* 修正：更換為薰衣草紫 */
+            --ios-purple: rgba(147, 112, 219, 0.95); 
         }
 
         body {
@@ -29,16 +31,26 @@
             justify-content: center;
             overflow-x: hidden;
             background-size: cover; background-position: center;
-            padding-bottom: 20px; /* 底部留白，防止被音量鈕擋到 */
         }
 
-        /* 跑馬燈區 */
         #infoBar {
             position: fixed; top: 0; left: 0; width: 100%; height: var(--marquee-height);
-            background: rgba(255, 59, 48, 0.95); backdrop-filter: blur(20px);
+            background: var(--ios-purple); 
+            backdrop-filter: blur(20px);
             z-index: 2000; display: none; overflow: hidden;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
         }
-        #marquee { line-height: var(--marquee-height); white-space: nowrap; font-size: 2.5rem; font-weight: 900; animation: scrollText 18s linear infinite; }
+        #marquee { 
+            line-height: var(--marquee-height); 
+            white-space: nowrap; 
+            font-size: 3.5rem; 
+            font-weight: 900; 
+            display: inline-block;
+            padding-bottom: 5px; 
+            animation: scrollText 18s linear infinite; 
+            color: #ffffff; /* 確保白色文字在薰衣草紫上清晰 */
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
         @keyframes scrollText { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
 
         body.has-marquee { padding-top: var(--marquee-height); }
@@ -49,7 +61,6 @@
             -webkit-background-clip: text; -webkit-text-fill-color: transparent;
         }
 
-        /* 主面板 */
         .display-panel { 
             text-align: center; background: var(--ios-glass); 
             backdrop-filter: blur(30px) saturate(180%); 
@@ -75,21 +86,13 @@
         .footer-zh { font-size: 1.8rem; font-weight: 900; color: #fff; display: block; } 
         .footer-en { font-size: 0.9rem; font-weight: 400; color: #94a3b8; margin-top: 5px; display: block; }
 
-        /* 手機旅人輸入區 */
         .traveler-input-box { 
             display: flex; flex-direction: column; align-items: center; 
             margin-top: 25px; width: 90%; max-width: 450px; z-index: 20; 
         }
-
-        /* 關鍵修正：找回並優化提示文字區塊 */
         .setup-guide {
-            background: rgba(255, 255, 255, 0.08);
-            border-radius: 20px;
-            padding: 15px;
-            margin-bottom: 20px;
-            width: 100%;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-sizing: border-box;
+            background: rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 15px;
+            margin-bottom: 20px; width: 100%; border: 1px solid rgba(255, 255, 255, 0.1); box-sizing: border-box;
         }
         .guide-title { color: var(--ios-yellow); font-weight: 700; text-align: center; margin-bottom: 8px; font-size: 1rem; }
         .guide-text { font-size: 0.85rem; color: #cbd5e1; line-height: 1.5; }
@@ -114,23 +117,22 @@
             cursor: pointer;
         }
 
-        /* 電視螢幕模式 */
         @media screen and (min-width: 1025px) {
+            :root { --marquee-height: 120px; }
+            #marquee { font-size: 4.5rem; } 
             .system-title { font-size: 3.2rem; margin: 30px 0; }
             .display-panel { max-width: 1100px; padding: 60px 40px; }
             .current-number { font-size: 22rem; }
             .label-zh { font-size: 3rem; }
-            .label-en { font-size: 1.2rem; }
             .footer-zh { font-size: 4rem; }
             .footer-en { font-size: 1.8rem; }
             .is-range { font-size: 13rem !important; }
-            .traveler-input-box { display: none; } /* 電視不顯示輸入框與提示 */
+            .traveler-input-box { display: none; }
         }
 
-        /* 手機版適配微調 */
         @media screen and (max-width: 600px) {
-            #marquee { font-size: 1.5rem; }
-            #infoBar { height: 50px; }
+            :root { --marquee-height: 60px; } 
+            #marquee { font-size: 1.8rem; line-height: 60px; } 
             .current-number { font-size: 7.5rem; }
             .is-range { font-size: 4.5rem !important; }
             .footer-zh { font-size: 1.5rem; }
@@ -169,7 +171,6 @@
     </div>
 
     <div class="traveler-input-box" id="mobileInputArea">
-        
         <div class="setup-guide">
             <div class="guide-title">⚙️ 背景提醒設定指南</div>
             <div class="guide-text">
@@ -178,7 +179,6 @@
                 • 建議不要關閉此網頁，以利背景接收通知
             </div>
         </div>
-
         <span class="traveler-label">輸入號碼牌到號通知</span>
         <input type="number" id="myNum" class="num-in" placeholder="000" oninput="saveNum()">
         <div id="inputStatusText" style="color:var(--ios-yellow); margin-top:12px; font-weight:700; font-size: 1rem;"></div>
@@ -192,7 +192,6 @@
     <button id="audioBtn" onclick="initAudio()">🔊 啟動語音提醒</button>
 
     <script>
-        // --- Firebase 設定與邏輯 (維持不變) ---
         const firebaseConfig = {
             apiKey: "AIzaSyCzy6jIBIV09mPZC291JWS6eRcOPGMv9To",
             authDomain: "hihigh-system.firebaseapp.com",
